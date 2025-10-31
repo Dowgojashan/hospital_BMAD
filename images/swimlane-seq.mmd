@@ -1,0 +1,15 @@
+%% Swimlane for patient booking to check-in
+sequenceDiagram
+    participant P as 病患
+    participant S as 系統
+    participant C as 醫護/管理
+
+    P->>S: 查詢班表/選擇時段
+    S-->>P: 顯示可用時段
+    P->>S: 提交預約
+    S-->>P: 回傳預約編號 + 提醒設定
+    P->>S: 線上報到（到院前）
+    S-->>C: 通知病患已報到
+    C-->>S: 更新候診狀態
+    S-->>P: 發送號碼接近提醒
+    P->>C: 到診並進入診間

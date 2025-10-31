@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "create-file-placeholder",
+			"type": "shell",
+			"command": "echo Creating file placeholder"
+		},
+		{
+			"label": "update-todo-placeholder",
+			"type": "shell",
+			"command": "echo Updating todo placeholder"
+		}
+	]
+}

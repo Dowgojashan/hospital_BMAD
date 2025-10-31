@@ -1,0 +1,19 @@
+%% Use Case Diagram for Online Hospital Registration System
+actor Patient as 病患
+actor Doctor as 醫師
+actor Admin as 管理員
+
+rectangle System {
+  病患 -- (註冊/登入)
+  病患 -- (查詢班表)
+  病患 -- (線上掛號/預約)
+  病患 -- (線上報到/Kiosk報到)
+  病患 -- (查看病歷摘要)
+  醫師 -- (登入)
+  醫師 -- (查看班表)
+  醫師 -- (停診申請)
+  醫師 -- (編輯病歷)
+  管理員 -- (管理班表)
+  管理員 -- (管理帳號)
+  管理員 -- (查看儀表板)
+}

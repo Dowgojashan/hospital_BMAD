@@ -1,0 +1,49 @@
+erDiagram
+    PATIENT {
+        string patient_id PK
+        string name
+        date dob
+        string phone
+        string email
+    }
+    DOCTOR {
+        string doctor_id PK
+        string name
+        string specialty
+    }
+    APPOINTMENT {
+        string appointment_id PK
+        string patient_id FK
+        string doctor_id FK
+        datetime start_time
+        datetime end_time
+        string status
+    }
+    SCHEDULE {
+        string schedule_id PK
+        string doctor_id FK
+        date date
+        time start
+        time end
+    }
+    MEDICAL_RECORD {
+        string record_id PK
+        string patient_id FK
+        string doctor_id FK
+        datetime created_at
+        text summary
+    }
+    AUDIT_LOG {
+        string log_id PK
+        string user_id
+        string action
+        datetime timestamp
+        string target_id
+    }
+
+    PATIENT ||--o{ APPOINTMENT : books
+    DOCTOR ||--o{ APPOINTMENT : receives
+    DOCTOR ||--o{ SCHEDULE : has
+    PATIENT ||--o{ MEDICAL_RECORD : has
+    DOCTOR ||--o{ MEDICAL_RECORD : authors
+    AUDIT_LOG ||--o{ MEDICAL_RECORD : logs
