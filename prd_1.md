@@ -270,7 +270,6 @@ erDiagram
 | phone | string |  | Yes | 聯絡電話（註冊時必填） |
 | email | string |  | Yes | 電子郵件（註冊時必填） |
 | created_at | datetime |  | Yes | 建檔時間 |
-
 | suspended_until | date |  | No | 若為未來日期，則禁止線上報到（僅允許現場報到）；此欄位由系統自動套用過號懲罰時寫入 |
 
 #### DOCTOR
@@ -301,11 +300,14 @@ erDiagram
 | appointment_id | UUID / string | PK | Yes | 預約主鍵 |
 | patient_id | UUID / string | FK -> PATIENT.patient_id | Yes | 關聯病患 |
 | doctor_id | UUID / string | FK -> DOCTOR.doctor_id | Yes | 關聯醫師 |
-| start_time | datetime |  | Yes | 預約起始時間 |
-| end_time | datetime |  | Yes | 預約結束時間 |
+| date | date |  | Yes | 預約日期 |
+| time_preiod | string |  | Yes | 預約時段(早上、下午、晚上) |
 | status | string (enum) |  | Yes | 預約狀態（scheduled/confirmed/waitlist/cancelled/checked_in/waiting/called/in_consult/completed/no_show） |
 | created_at | datetime |  | Yes | 建立時間 |
 
+#### CHECKIN
+| 屬性 | 資料型別 (範例) | PK/FK | NOT NULL | 備註 |
+|---|---|:---:|:---:|---|
 | checkin_time | datetime |  | No | 病患實際報到時間（線上或現場） |
 | checkin_method | string (enum) |  | No | 報到方式（onsite / online） |
 | ticket_sequence | int |  | No | 該診間/該醫師當日之流水序號（每日於 00:00 由 DayCounter/keyed date 自然重置） |
