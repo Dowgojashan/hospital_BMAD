@@ -28,6 +28,22 @@
 ## 系統概覽
 此系統提供病患線上/線下掛號、報到管理、醫師班表管理、病歷紀錄與稽核等主要功能。系統架構採分層設計：Controller -> Service -> Repository -> Database，並以 Notification Service、Audit Service 等周邊服務支援非同步通知與審計。
 
+## 官方技術堆疊 (Official Tech Stack)
+為了讓開發團隊在 MVP 階段有統一且可落實的實作基準，專案採用以下技術堆疊：
+
+- 後端框架：Python 3.10+ 與 FastAPI（非同步與同步路由皆支援，內建 OpenAPI 文件）。
+- ORM：SQLAlchemy ORM（搭配 SQLAlchemy Core 必要時使用），資料庫 migration 使用 Alembic。
+- 資料庫：PostgreSQL（生產環境）、開發/測試可使用 Dockerized Postgres 或 SQLite（限輕量測試）。
+- API 規格：RESTful JSON 為主要介面，並使用 WebSockets（或 FastAPI 的 WebSocket 支援）提供即時通知/叫號推送。
+- 非同步任務：Message Queue（RabbitMQ 或 Redis Streams）；Background worker 選項：Celery 或 Dramatiq（視團隊熟悉度選擇）。
+- 資料驗證：Pydantic models（作為 request/response schema 與 service boundary validation）。
+- 認證/授權：OAuth2 / JWT（FastAPI 的 OAuth2PasswordBearer 與 scope-based RBAC），敏感操作需 RBAC 檢查。
+- 監控/日誌：標準 logging 模組（結合 JSON formatter、集中式 log aggregation，例如 ELK 或 Loki）。
+- CI/CD：GitHub Actions（或等價 CI）做 lint/test/build/migration pipeline。
+
+以上技術選型為 MVP 最小可行組合，若未來需水平擴展可在此基礎替換或新增，例如把消息系統換成 Kafka、或把 worker 換成 Kubernetes CronJobs + serverless functions。
+
+
 ## 資料庫物理設計
 
 ### 關聯性說明
@@ -227,6 +243,123 @@
 - 建議在建立預約 (UC-RS-01) 與發放當日序號 (RoomDay.next_sequence) 的流程中，使用資料庫層級交易 (BEGIN ... COMMIT) 並搭配行鎖（例如 Postgres 的 SELECT ... FOR UPDATE）以避免並發超額掛號或序號重複。
 - 所有跨多表的寫入（例如取消班表需同時變更 SCHEDULE 與相關 APPOINTMENT）應在單一交易內完成，若操作耗時長則採用悲觀鎖或在應用層加上重試/補償機制。
 - AUDIT_LOG 採 append-only；建議在同一交易或在完成主要寫入後立即以獨立連線寫入審計，且不要允許被覆寫或刪除。
+
+## 系統架構與原始碼樹 (System Architecture & Source Tree)
+本專案採 Controller -> Service -> Repository 的分層架構（thin controllers, fat services）。以下為建議的原始碼目錄結構（ASCII 樹狀圖），供開發團隊作為單一事實來源：
+
+```
+app/
+├─ api/
+│  ├─ v1/
+│  │  ├─ routers.py            # 路由定義 (include APIRouter)
+│  │  ├─ controllers/         # controllers / controllers 層 (輕薄，負責驗證、轉換、呼叫 Service)
+│  │  │  ├─ appointment_controller.py
+│  │  │  └─ checkin_controller.py
+│  │  └─ docs/
+├─ services/
+│  ├─ appointment_service.py  # 業務邏輯實作（交易、鎖定、通知）
+│  ├─ checkin_service.py
+│  └─ schedule_service.py
+├─ repositories/
+│  ├─ appointment_repository.py
+│  ├─ patient_repository.py
+│  └─ roomday_repository.py
+├─ models/                     # ORM models (SQLAlchemy)
+│  ├─ patient.py
+│  ├─ doctor.py
+│  └─ appointment.py
+├─ schemas/                    # Pydantic schemas (request/response)
+│  ├─ appointment_schema.py
+│  └─ checkin_schema.py
+├─ core/                       # config, exceptions, security utilities
+│  ├─ config.py
+│  ├─ security.py
+│  └─ exceptions.py            # domain/business exceptions
+├─ db/
+│  ├─ base.py                  # SQLAlchemy base, session maker
+│  └─ migrations/              # Alembic migration files
+├─ workers/                    # background workers / tasks
+│  ├─ tasks.py
+│  └─ celery_app.py
+├─ notifications/              # Notification adapters (WebSocket, SMS, Email)
+├─ tests/
+│  ├─ unit/
+│  └─ integration/
+├─ scripts/
+└─ README.md
+
+```
+
+責任說明：
+- api/controllers: 處理 HTTP 層面的驗證、認證、Pydantic schema 驗證、並呼叫 service；不得直接使用 ORM session 寫入 DB。
+- services: 實作業務邏輯，包含交易管理、鎖定 (SELECT ... FOR UPDATE)、與呼叫 repository；Service 層可拋出 domain-specific exceptions。
+- repositories: 封裝所有 DB 存取（SQLAlchemy queries / statements），並提供高層 API 給 service 層使用。
+- models: ORM mapping（SQLAlchemy declarative base）與 DB schema 關聯。
+- schemas: Pydantic models 作為 API 與 service 的資料契約。
+- workers/notifications: 非同步任務、消息推送、retry 與 DLQ 處理。
+
+此樹狀圖及責任劃分需為團隊開發/code review 的共同準則。
+
+## 開發與實作標準 (Coding Standards)
+本章定義開發團隊應遵守的程式碼與實作標準，確保可維護性、可測試性與一致性。
+
+1) 命名慣例
+- 遵循 PEP 8 與 Python 社群慣例。
+- 變數、函式與模組名稱使用 snake_case（例如：get_patient_by_id、appointment_service.py）。
+- 類別與例外類別使用 PascalCase（例如：AppointmentService、PatientNotFoundError）。
+- 常數使用 UPPER_SNAKE_CASE（例如：DEFAULT_PAGE_SIZE）。
+
+2) 例外處理（Exceptions）
+- Service 層：在業務驗證或 domain error 時拋出 domain-specific exceptions（位於 `core/exceptions.py`），例如 `CapacityExceededError`, `PatientSuspendedError`。
+- Repository 層：在 DB 層錯誤（例如 unique constraint violation）可拋出更語意化的例外或讓 Service 層捕捉並處理。
+- API (Controller) 層：只負責捕獲 Service 或 Repository 拋出的例外，並透過 FastAPI 的 exception handlers 將其轉換為對應的 HTTP 回應（例如 400/403/404/409/500）。
+
+範例映射（建議）：
+- PatientNotFoundError -> 404 Not Found
+- PatientSuspendedError -> 403 Forbidden
+- CapacityExceededError -> 409 Conflict
+- ValidationError (Pydantic) -> 400 Bad Request
+
+3) 日誌與追蹤（Logging & Tracing）
+- 全案使用標準 `logging` 模組，並在部署時搭配集中式 log aggregator（ELK/Loki+Grafana）。
+- 每一筆 request/use-case 必須攜帶 `correlation_id`（UUID），由路由層產生（若 request header 未提供），並放入 log records（可使用 logging Filter 或 contextvars 實作）。
+- 日誌級別：ERROR/CRITICAL 用於例外與系統錯誤；INFO 用於重要商業事件（預約建立/取消）；DEBUG 僅於開發或 debug 模式。
+
+範例（紀錄內容應包含）： timestamp, level, correlation_id, user_id (if any), action, resource_id, message
+
+4) ORM 與 DB 存取規範
+- 禁止在 API/controller 層直接操作 ORM 或執行 SQL。所有 DB 存取必須通過 repository 層封裝。
+- Service 層負責 transaction 範圍控制（BEGIN/COMMIT/ROLLBACK），並負責呼叫 repository 進行 SELECT ... FOR UPDATE 等鎖定操作。
+- Repository methods 應該是原子且可重入的：避免在 repository 中做長時間 blocking 操作。
+- 對於高併發序號分配（RoomDay.next_sequence）或排隊相關操作，必須使用資料庫行鎖（SELECT ... FOR UPDATE）並在同一 transaction 中完成遞增與 INSERT。
+
+5) Transaction 與重試策略
+- 所有跨多表寫入或具一致性需求的流程（例如建立預約、停診取消預約、checkin 與序號分配）必須在 transaction 中執行。
+- 對於可能因鎖爭用失敗的交易，使用短次數重試（例如 3 次）與指數回退機制；避免無限重試。
+
+6) API 與 Schema 規範
+- 所有 request/response 使用 Pydantic schema（`app/schemas`），schema 應包含 field-level validation 與例外訊息。
+- API 必須提供 OpenAPI 文件（FastAPI 內建），並在 contract 變更時更新相應 schema。
+
+7) 單元測試與整合測試
+- 每個 service 與 repository 都應有對應的單元測試（pytest），repository 的整合測試應在 test DB（Postgres via docker-compose）上執行。
+- 關鍵交易路徑（預約建立、序號分配、停診取消）必須有整合測試覆蓋。
+
+8) Lint / Format / Commit
+- 代碼格式：black 作為格式化工具；flake8 作為靜態檢查（可搭配 pylint 規則集）。
+- commit message 使用 Conventional Commits（feat/fix/docs/test/chore），PR 描述需包含變更重點與 migration 指示（若有）。
+
+9) 安全與 PII 處理
+- 所有 PII（card_number、email、phone 等）必須最小化存取，並在 log 中遮蔽（例如只顯示後 4 碼）或不寫明文。
+- 如果需在 DB 儲存敏感識別號 (card_number)，請使用可逆加密（KMS 管理的 AES-256）或透過 DB 的透明資料加密 (TDE)。
+
+10) 範例：Service -> API 錯誤處理流程
+- Service: 若發生 CapacityExceededError，直接拋出該例外。
+- API 層: 使用 FastAPI exception_handler 捕捉 CapacityExceededError，mapping to HTTP 409，response body 含 correlation_id 以便追蹤。
+
+以上標準為開發團隊的必遵守規範；在 code review 或 PR 審核時應驗證是否符合。
+
+
 
 ## 物件設計 — 類別圖 (Class Diagram)
 下列為核心資料實體之類別圖 (PlantUML)。類別包含主要屬性與常用方法 (service-oriented 方法為示意，實際實作於 Service 層)。
