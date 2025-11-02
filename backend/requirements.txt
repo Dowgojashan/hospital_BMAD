@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic[email]
+passlib==1.7.4
+python-jose[cryptography]
+alembic
+psycopg2-binary
+python-multipart
+gunicorn
+
+# bcrypt for passlib bcrypt backend compatibility
+bcrypt==3.2.0

@@ -11,13 +11,19 @@ RUN apt-get update \
 # Create a non-root user for running the app
 RUN useradd --create-home --shell /bin/bash appuser
 
-# Copy requirements if present (recommended)
-COPY backend/requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip setuptools wheel \
-  && if [ -f /app/requirements.txt ]; then pip install -r /app/requirements.txt; fi
+# [修正] 移除 'backend/' 前綴。
+# Docker build 的 "context" 已經在 backend 資料夾內了。
+COPY requirements.txt /app/requirements.txt
 
-# Copy source (in dev we'll mount the local folder to /app)
-COPY backend /app
+# Install dependencies
+# ...
+RUN pip install --upgrade pip setuptools wheel \
+  && pip install bcrypt \
+  && if [ -f /app/requirements.txt ]; then pip install -r /app/requirements.txt; fi
+# ...
+
+# [修正] 將 'backend' 改為 '.' (點)，代表 "複製當前目錄所有內容"
+COPY . /app
 RUN chown -R appuser:appuser /app
 
 USER appuser

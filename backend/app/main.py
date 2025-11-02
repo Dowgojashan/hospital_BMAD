@@ -1,0 +1,25 @@
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="Hospital BMAD API",
+    description="API for the Hospital BMAD project",
+    version="0.1.0",
+)
+
+# Set all CORS enabled origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from app.api.routers import auth
+
+app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Hospital BMAD API"}
