@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app:rw
+      - /app/.venv
+    env_file:
+      - ./.env
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db
+      - mq
+      - redis
+    networks:
+      - hospital_net
+
+  frontend:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./frontend:/app:rw
+      - /app/node_modules
+    environment:
+      # use polling file watcher for mounted volumes on some OS
+      - CHOKIDAR_USEPOLLING=true
+    command: sh -c "npm install --silent && npm run dev"
+    ports:
+      - '3000:3000'
+    networks:
+      - hospital_net
+
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-appuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-hospital}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    networks:
+      - hospital_net
+
+  mq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    ports:
+      - '5672:5672'
+      - '15672:15672' # management UI
+    networks:
+      - hospital_net
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    networks:
+      - hospital_net
+
+volumes:
+  pgdata:
+
+networks:
+  hospital_net:
+    driver: bridge
