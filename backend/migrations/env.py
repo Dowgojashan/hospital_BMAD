@@ -1,41 +1,58 @@
+from logging.config import fileConfig
 import os
 import sys
-from logging.config import fileConfig
+from dotenv import load_dotenv
 
-# [--- 開始修正 ---]
-# 獲取 env.py 檔案所在的目錄 (/app/migrations)
-script_dir = os.path.dirname(os.path.abspath(__file__))
-# 獲取該目錄的上一層目錄 (/app)
-project_root = os.path.dirname(script_dir)
-# 將 /app 目錄加入到 Python 的 sys.path 中
-sys.path.append(project_root)
-# [--- 修正完畢 ---]
+from sqlalchemy import engine_from_config
+from sqlalchemy import pool
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
 
-# [關鍵] 這一行現在應該可以正常運作了
+# Add the backend directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Import your Base from app.db.base
 from app.db.base import Base
-# 讀取 .ini 檔案的設定
+
+# Import all models to ensure they are registered with SQLAlchemy MetaData
+import app.models
+
+# Load environment variables from .env file
+load_dotenv()
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
 config = context.config
 
-# 設定日誌
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# [關鍵] 將您的 Base 設為 Alembic 的目標
-# 這樣 Alembic 在 "autogenerate" 時才能看到您的模型
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
 target_metadata = Base.metadata
 
-# --- 以下為資料庫連線設定 ---
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
 
-def get_url():
-    """從環境變數 .env 讀取 DATABASE_URL"""
-    return os.getenv("DATABASE_URL")
 
 def run_migrations_offline() -> None:
-    """在離線模式下執行遷移。"""
-    url = get_url()
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -48,13 +65,17 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """在連線模式下執行遷移。"""
-    # 使用 .ini 檔案中的設定（它會讀取 ${DATABASE_URL}）
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        url=get_url() # 確保使用 .env 的 URL
+        url=os.getenv("DATABASE_URL"), # Explicitly pass DATABASE_URL
     )
 
     with connectable.connect() as connection:

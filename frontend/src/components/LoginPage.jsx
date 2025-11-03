@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom' // Import Link
 import api from '../api/axios'
 import { useAuthStore } from '../store/authStore'
+import { decodeToken } from '../utils/auth'
 
 export default function LoginPage() {
   console.info('LoginPage: render start')
@@ -25,8 +26,14 @@ export default function LoginPage() {
       })
       const { access_token } = resp.data
       setToken(access_token)
+
+      const decodedToken = decodeToken(access_token)
+      if (decodedToken && decodedToken.role === 'admin') {
+        navigate('/admin/account-management')
+      } else {
+        navigate('/dashboard')
+      }
       console.info('LoginPage.handleSubmit: end (success)')
-      navigate('/dashboard')
     } catch (err) {
       console.info('LoginPage.handleSubmit: end (error)')
       console.error(err)
