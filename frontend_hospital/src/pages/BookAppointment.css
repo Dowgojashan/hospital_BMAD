@@ -1,0 +1,17 @@
+.book-form {
+  max-width: 600px;
+}
+
+.schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.schedule-item {
+  padding: 12px;
+  background: var(--accent-blue);
+  border-radius: 6px;
+}
+
