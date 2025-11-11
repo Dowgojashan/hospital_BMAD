@@ -12,11 +12,11 @@ const AdminUserManagementPage = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    login_id: '', // This will be account_username for admin, doctor_login_id for doctor
+    email: '',    // Only for admin contact email
     password: '',
-    role: 'admin', // Default to admin
-    specialty: '',
-    phone: '',
+    role: 'admin',
+    specialty: '', // Only for doctor
   });
   const [filterRole, setFilterRole] = useState('all');
 
@@ -37,7 +37,8 @@ const AdminUserManagementPage = () => {
       const admins = adminsResponse.data.map(admin => ({
         id: admin.admin_id,
         name: admin.name,
-        email: admin.email,
+        login_id: admin.account_username,
+        email: admin.email, // Admin contact email
         role: 'admin',
         is_system_account: admin.is_system_account,
       }));
@@ -45,10 +46,9 @@ const AdminUserManagementPage = () => {
       const doctors = doctorsResponse.data.map(doctor => ({
         id: doctor.doctor_id,
         name: doctor.name,
-        email: doctor.email,
+        login_id: doctor.doctor_login_id,
         role: 'doctor',
         specialty: doctor.specialty,
-        phone: doctor.phone,
       }));
 
       setUsers([...admins, ...doctors]);
@@ -67,17 +67,17 @@ const AdminUserManagementPage = () => {
         // Update user
         if (formData.role === 'admin') {
           await api.put(`/api/v1/admins/${editingUser.id}`, {
+            account_username: formData.login_id,
             name: formData.name,
             email: formData.email,
-            ...(formData.password && { password: formData.password }), // Only send password if it's not empty
+            ...(formData.password && { password: formData.password }),
           });
         } else if (formData.role === 'doctor') {
           await api.put(`/api/v1/doctors/${editingUser.id}`, {
+            doctor_login_id: formData.login_id,
             name: formData.name,
-            email: formData.email,
             specialty: formData.specialty,
-            phone: formData.phone,
-            ...(formData.password && { password: formData.password }), // Only send password if it's not empty
+            ...(formData.password && { password: formData.password }),
           });
         }
         alert('帳號更新成功！');
@@ -85,17 +85,17 @@ const AdminUserManagementPage = () => {
         // Create user
         if (formData.role === 'admin') {
           await api.post('/api/v1/admins/', {
+            account_username: formData.login_id,
             name: formData.name,
             email: formData.email,
             password: formData.password,
           });
         } else if (formData.role === 'doctor') {
           await api.post('/api/v1/doctors/', {
+            doctor_login_id: formData.login_id,
             name: formData.name,
-            email: formData.email,
             password: formData.password,
             specialty: formData.specialty,
-            phone: formData.phone,
           });
         }
         alert('帳號建立成功！');
@@ -121,11 +121,11 @@ const AdminUserManagementPage = () => {
     setEditingUser(user);
     setFormData({
       name: user.name,
-      email: user.email,
+      login_id: user.role === 'admin' ? user.account_username : user.doctor_login_id,
+      email: user.role === 'admin' ? user.email : '', // Only admin has contact email
       password: '', // Password should not be pre-filled for security
       role: user.role,
       specialty: user.specialty || '',
-      phone: user.phone || '',
     });
     setShowForm(true);
   };
@@ -268,29 +268,111 @@ const AdminUserManagementPage = () => {
 
   
 
-              <div className="form-group">
+                          <div className="form-group">
 
-                <label className="form-label">電子郵件</label>
+  
 
-                <input
+                            <label className="form-label">登入帳號</label>
 
-                  type="email"
+  
 
-                  className="form-control"
+                            <input
 
-                  value={formData.email}
+  
 
-                  onChange={(e) =>
+                              type="text"
 
-                    setFormData({ ...formData, email: e.target.value })
+  
 
-                  }
+                              className="form-control"
 
-                  required
+  
 
-                />
+                              value={formData.login_id}
 
-              </div>
+  
+
+                              onChange={(e) =>
+
+  
+
+                                setFormData({ ...formData, login_id: e.target.value })
+
+  
+
+                              }
+
+  
+
+                              required
+
+  
+
+                            />
+
+  
+
+                          </div>
+
+  
+
+              
+
+  
+
+                          {formData.role === 'admin' && (
+
+  
+
+                            <div className="form-group">
+
+  
+
+                              <label className="form-label">電子郵件 (聯絡)</label>
+
+  
+
+                              <input
+
+  
+
+                                type="email"
+
+  
+
+                                className="form-control"
+
+  
+
+                                value={formData.email}
+
+  
+
+                                onChange={(e) =>
+
+  
+
+                                  setFormData({ ...formData, email: e.target.value })
+
+  
+
+                                }
+
+  
+
+                                required
+
+  
+
+                              />
+
+  
+
+                            </div>
+
+  
+
+                          )}
 
   
 
