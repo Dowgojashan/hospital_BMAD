@@ -16,11 +16,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.routers import auth, admin_management, schedules
+from app.api.routers import auth, admin_management, schedules, profile
 
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(admin_management.router, prefix="/api/v1", tags=["admin-management"])
 app.include_router(schedules.router, prefix="/api/v1/schedules", tags=["schedules"])
+app.include_router(profile.router, prefix="/api/v1/profile", tags=["profile-management"])
 
 @app.get("/")
 def read_root():

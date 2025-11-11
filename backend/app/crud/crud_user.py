@@ -1,10 +1,12 @@
 import logging
+import re
 from sqlalchemy.orm import Session
-from typing import Optional, Tuple
-from fastapi import HTTPException
+from typing import Optional, Tuple, List
+from fastapi import HTTPException, status # Import status
+import uuid # Import uuid
 
 from app.models import Admin, Doctor, Patient
-from app.schemas.patient import PatientCreate
+from app.schemas.patient import PatientCreate, PatientUpdate # Import PatientUpdate
 from app.core import security
 
 logger = logging.getLogger(__name__)
@@ -68,3 +70,56 @@ def create_patient(db: Session, patient_in: PatientCreate):
     db.refresh(db_obj)
     logger.info("create_patient: end")
     return db_obj
+
+
+def get_patient(db: Session, patient_id: uuid.UUID) -> Optional[Patient]:
+    return db.query(Patient).filter(Patient.patient_id == patient_id).first()
+
+
+def list_patients(db: Session, skip: int = 0, limit: int = 100) -> List[Patient]:
+    return db.query(Patient).offset(skip).limit(limit).all()
+
+
+def update_patient(db: Session, patient_id: uuid.UUID, patient_in: PatientUpdate) -> Optional[Patient]:
+    db_patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not db_patient:
+        return None
+
+    update_data = patient_in.dict(exclude_unset=True)
+
+    if "email" in update_data and update_data["email"] != db_patient.email:
+        existing_patient = db.query(Patient).filter(Patient.email == update_data["email"]).first()
+        if existing_patient:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered by another patient."
+            )
+    
+    if "card_number" in update_data and update_data["card_number"] != db_patient.card_number:
+        existing_card = db.query(Patient).filter(Patient.card_number == update_data["card_number"]).first()
+        if existing_card:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Card number already registered by another patient."
+            )
+
+    if "password" in update_data and update_data["password"]:
+        db_patient.password_hash = security.get_password_hash(update_data["password"])
+        del update_data["password"]
+
+    for field, value in update_data.items():
+        setattr(db_patient, field, value)
+
+    db.add(db_patient)
+    db.commit()
+    db.refresh(db_patient)
+    return db_patient
+
+
+def delete_patient(db: Session, patient_id: uuid.UUID) -> Optional[Patient]:
+    db_patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if not db_patient:
+        return None
+    db.delete(db_patient)
+    db.commit()
+    return db_patient

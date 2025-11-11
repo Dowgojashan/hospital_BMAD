@@ -8,9 +8,11 @@ from app.db.session import get_db
 from app.core.security import verify_token
 from app.models.admin import Admin
 from app.models.doctor import Doctor
+from app.models.patient import Patient # Import Patient model
 from app.schemas.admin import AdminCreate, AdminUpdate, AdminPublic
 from app.schemas.doctor import DoctorCreate, DoctorUpdate, DoctorPublic
-from app.crud import crud_admin, crud_doctor
+from app.schemas.patient import PatientCreate, PatientUpdate, PatientPublic # Import Patient schemas
+from app.crud import crud_admin, crud_doctor, crud_user # Import crud_user
 
 router = APIRouter()
 
@@ -164,4 +166,63 @@ def delete_doctor_endpoint(
     doctor = crud_doctor.delete_doctor(db=db, doctor_id=doctor_id)
     if not doctor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
+    return
+
+
+# Patient Management Endpoints
+@router.post("/patients/", response_model=PatientPublic, status_code=status.HTTP_201_CREATED)
+def create_patient_endpoint(
+    patient_in: PatientCreate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    db_patient = crud_user.create_patient(db=db, patient_in=patient_in)
+    return db_patient
+
+
+@router.get("/patients/", response_model=List[PatientPublic])
+def list_patients_endpoint(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    patients = crud_user.list_patients(db=db, skip=skip, limit=limit)
+    return patients
+
+
+@router.get("/patients/{patient_id}", response_model=PatientPublic)
+def get_patient_endpoint(
+    patient_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    patient = crud_user.get_patient(db=db, patient_id=patient_id)
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+    return patient
+
+
+@router.put("/patients/{patient_id}", response_model=PatientPublic)
+def update_patient_endpoint(
+    patient_id: uuid.UUID,
+    patient_in: PatientUpdate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    patient = crud_user.update_patient(db=db, patient_id=patient_id, patient_in=patient_in)
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+    return patient
+
+
+@router.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_patient_endpoint(
+    patient_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    patient = crud_user.delete_patient(db=db, patient_id=patient_id)
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
     return

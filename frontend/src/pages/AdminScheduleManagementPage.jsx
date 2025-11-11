@@ -11,20 +11,6 @@ import React, { useState, useEffect } from 'react';
 import './AdminScheduleManagementPage.css';
 import api from '../api/axios'; // Use existing axios instance
 
-// Mock data for doctors (temporary)
-const mockDoctors = [
-  { doctor_id: 'doc001', name: 'Dr. Chen', specialty: '內科' },
-  { doctor_id: 'doc002', name: 'Dr. Lin', specialty: '小兒科' },
-  { doctor_id: 'doc003', name: 'Dr. Wang', specialty: '內科' },
-];
-
-// Mock data for schedules (temporary)
-const mockSchedules = [
-  { schedule_id: 'sch001', doctor_name: 'Dr. Chen', specialty: '內科', date: '2025-12-01', start: '09:00', end: '12:00', doctor_id: 'doc001' },
-  { schedule_id: 'sch002', doctor_name: 'Dr. Chen', specialty: '內科', date: '2025-12-02', start: '14:00', end: '17:00', doctor_id: 'doc001' },
-  { schedule_id: 'sch003', doctor_name: 'Dr. Lin', specialty: '小兒科', date: '2025-12-01', start: '10:00', end: '13:00', doctor_id: 'doc002' },
-];
-
 const AdminScheduleManagementPage = () => {
   const [schedules, setSchedules] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -37,35 +23,58 @@ const AdminScheduleManagementPage = () => {
     end: '',
   });
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(''); // For displaying messages to the user
 
   useEffect(() => {
-    loadSchedules();
     loadDoctors();
   }, []);
 
-  const loadSchedules = async () => {
-    try {
-      // TODO: Integrate with actual API endpoint for fetching schedules
-      // const response = await api.get('/api/v1/admin/schedules');
-      // setSchedules(response.data);
+  useEffect(() => {
+    if (doctors.length > 0) {
+      loadSchedules();
+    }
+  }, [doctors]);
 
-      // Using mock data for now
-      setSchedules(mockSchedules);
+  const loadSchedules = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/api/v1/schedules/');
+      const fetchedSchedules = response.data;
+
+      // Enrich schedules with doctor names and specialties
+      const enrichedSchedules = fetchedSchedules.map(schedule => {
+        const doctor = doctors.find(doc => doc.id === schedule.doctor_id);
+        return {
+          ...schedule,
+          doctor_name: doctor ? doctor.name : '未知醫師',
+          specialty: doctor ? doctor.specialty : '未知科別',
+        };
+      });
+      setSchedules(enrichedSchedules);
     } catch (error) {
       console.error('載入班表失敗:', error);
+      setMessage('載入班表失敗，請稍後再試。');
+    } finally {
+      setLoading(false);
     }
   };
 
   const loadDoctors = async () => {
+    setLoading(true);
     try {
-      // TODO: Integrate with actual API endpoint for fetching doctors
-      // const response = await api.get('/api/v1/admin/doctors');
-      // setDoctors(response.data);
-
-      // Using mock data for now
-      setDoctors(mockDoctors);
+      const response = await api.get('/api/v1/doctors/');
+      // Assuming the doctor objects from /api/v1/doctors/ have doctor_id, name, specialty
+      const fetchedDoctors = response.data.map(doctor => ({
+        id: doctor.doctor_id,
+        name: doctor.name,
+        specialty: doctor.specialty,
+      }));
+      setDoctors(fetchedDoctors);
     } catch (error) {
       console.error('載入醫師列表失敗:', error);
+      setMessage('載入醫師列表失敗，請稍後再試。');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,22 +82,46 @@ const AdminScheduleManagementPage = () => {
     e.preventDefault();
     setLoading(true);
 
+    if (new Date(formData.date) < new Date()) {
+      setMessage('日期不能是過去的日期。');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.start >= formData.end) {
+      setMessage('開始時間必須早於結束時間。');
+      setLoading(false);
+      return;
+    }
+
+    // Validate minutes for start and end times
+    const startMinutes = parseInt(formData.start.split(':')[1]);
+    const endMinutes = parseInt(formData.end.split(':')[1]);
+
+    if ((startMinutes !== 0 && startMinutes !== 30) || (endMinutes !== 0 && endMinutes !== 30)) {
+      setMessage('時間只能選擇整點或30分。');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Submitting formData:', formData); // Debugging line
+
     try {
       if (editingSchedule) {
-        // TODO: Integrate with actual API endpoint for updating schedule
-        // await api.put(`/api/v1/admin/schedules/${editingSchedule.schedule_id}`, formData);
-        alert('班表更新成功！ (Mock)'); // Mock success
+        await api.put(`/api/v1/schedules/${editingSchedule.schedule_id}`, formData);
+        setMessage('班表更新成功！');
       } else {
-        // TODO: Integrate with actual API endpoint for creating schedule
-        // await api.post('/api/v1/admin/schedules', formData);
-        alert('班表新增成功！ (Mock)'); // Mock success
+        await api.post('/api/v1/schedules/', formData);
+        setMessage('班表新增成功！');
       }
       setShowForm(false);
       setEditingSchedule(null);
       setFormData({ doctor_id: '', date: '', start: '', end: '' });
       loadSchedules();
     } catch (error) {
-      alert('操作失敗，請稍後再試 (Mock)'); // Mock failure
+      console.error('操作失敗:', error);
+      const errorMessage = error.response?.data?.detail || '操作失敗，請稍後再試。';
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -111,12 +144,13 @@ const AdminScheduleManagementPage = () => {
     }
 
     try {
-      // TODO: Integrate with actual API endpoint for deleting schedule
-      // await api.delete(`/api/v1/admin/schedules/${scheduleId}`);
-      alert('刪除成功！ (Mock)'); // Mock success
+      await api.delete(`/api/v1/schedules/${scheduleId}`);
+      setMessage('刪除成功！');
       loadSchedules();
     } catch (error) {
-      alert('刪除失敗，請稍後再試 (Mock)'); // Mock failure
+      console.error('刪除失敗:', error);
+      const errorMessage = error.response?.data?.detail || '刪除失敗，請稍後再試。';
+      setMessage(errorMessage);
     }
   };
 
@@ -153,7 +187,7 @@ const AdminScheduleManagementPage = () => {
               >
                 <option value="">請選擇醫師</option>
                 {doctors.map((doctor) => (
-                  <option key={doctor.doctor_id} value={doctor.doctor_id}>
+                  <option key={doctor.id} value={doctor.id}>
                     {doctor.name} - {doctor.specialty}
                   </option>
                 ))}

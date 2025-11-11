@@ -2,3 +2,24 @@
 .users-table {
   overflow-x: auto;
 }
+
+/* Shorten input fields in the form */
+.card form .form-control {
+  max-width: 350px; /* Adjust as needed */
+}
+
+.card form .form-select {
+  max-width: 350px; /* Adjust as needed for select boxes */
+}
+
+/* Center the form within the card */
+.card form {
+  max-width: 600px; /* Limit the form width */
+  margin: 0 auto; /* Center the form */
+  padding: 20px; /* Add some padding inside the form */
+}
+
+.card h3 {
+  text-align: center; /* Center the form title */
+  margin-bottom: 20px;
+}
