@@ -98,13 +98,15 @@ const AdminUserManagementPage = () => {
             password: formData.password,
           });
         } else if (formData.role === 'doctor') {
-          await api.post('/api/v1/doctors/', {
+          const doctorData = {
             doctor_login_id: formData.login_id,
             name: formData.name,
             password: formData.password,
             specialty: formData.specialty,
-            email: formData.email, // Now sending email for doctor creation
-          });
+            email: formData.email,
+          };
+          console.log('Sending doctor creation data:', doctorData);
+          await api.post('/api/v1/doctors/', doctorData);
         }
         alert('帳號建立成功！');
       }

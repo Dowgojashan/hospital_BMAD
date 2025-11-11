@@ -16,12 +16,14 @@ def list_doctors(db: Session, skip: int = 0, limit: int = 100) -> List[Doctor]:
 
 
 def create_doctor(db: Session, doctor_in: DoctorCreate) -> Doctor:
+    print(f"Received doctor_in data: {doctor_in.dict()}") # Debug print
     hashed_password = get_password_hash(doctor_in.password)
     db_doctor = Doctor(
         doctor_login_id=doctor_in.doctor_login_id,
         password_hash=hashed_password,
         name=doctor_in.name,
         specialty=doctor_in.specialty,
+        email=doctor_in.email,
     )
     db.add(db_doctor)
     db.commit()
