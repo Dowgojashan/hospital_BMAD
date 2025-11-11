@@ -9,12 +9,14 @@ class DoctorCreate(BaseModel):
     password: str = Field(..., min_length=6)
     name: str
     specialty: str
+    email: EmailStr
 
 
 class DoctorUpdate(BaseModel):
     password: Optional[str] = Field(None, min_length=6)
     name: Optional[str] = None
     specialty: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 
 class DoctorPublic(BaseModel):

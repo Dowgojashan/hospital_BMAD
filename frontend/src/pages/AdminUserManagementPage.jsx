@@ -13,8 +13,9 @@ const AdminUserManagementPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     login_id: '', // This will be account_username for admin, doctor_login_id for doctor
-    email: '',    // Only for admin contact email
+    email: '',    // For admin contact email, and now for doctor email
     password: '',
+    confirmPassword: '', // New field for confirm password
     role: 'admin',
     specialty: '', // Only for doctor
   });
@@ -62,6 +63,11 @@ const AdminUserManagementPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!editingUser && formData.password !== formData.confirmPassword) {
+      alert('密碼與確認密碼不符，請重新輸入。');
+      return;
+    }
     try {
       if (editingUser) {
         // Update user
@@ -77,6 +83,7 @@ const AdminUserManagementPage = () => {
             doctor_login_id: formData.login_id,
             name: formData.name,
             specialty: formData.specialty,
+            email: formData.email, // Now sending email for doctor update
             ...(formData.password && { password: formData.password }),
           });
         }
@@ -96,6 +103,7 @@ const AdminUserManagementPage = () => {
             name: formData.name,
             password: formData.password,
             specialty: formData.specialty,
+            email: formData.email, // Now sending email for doctor creation
           });
         }
         alert('帳號建立成功！');
@@ -113,7 +121,8 @@ const AdminUserManagementPage = () => {
       loadUsers(); // Reload users after successful operation
     } catch (error) {
       console.error('Failed to submit user:', error);
-      alert('操作失敗，請檢查輸入或稍後再試。');
+      const errorMessage = error.response?.data?.detail || '操作失敗，請檢查輸入或稍後再試。';
+      alert(errorMessage);
     }
   };
 
@@ -121,9 +130,10 @@ const AdminUserManagementPage = () => {
     setEditingUser(user);
     setFormData({
       name: user.name,
-      login_id: user.role === 'admin' ? user.account_username : user.doctor_login_id,
-      email: user.role === 'admin' ? user.email : '', // Only admin has contact email
-      password: '', // Password should not be pre-filled for security
+      login_id: '', // Should be blank on edit
+      email: user.email || '', // Admin contact email or doctor email
+      password: '', // Should be blank on edit
+      confirmPassword: '', // Should be blank on edit
       role: user.role,
       specialty: user.specialty || '',
     });
@@ -144,7 +154,8 @@ const AdminUserManagementPage = () => {
       loadUsers(); // Reload users after successful deletion
     } catch (error) {
       console.error('Failed to delete user:', error);
-      alert('刪除失敗，請稍後再試。');
+      const errorMessage = error.response?.data?.detail || '刪除失敗，請稍後再試。';
+      alert(errorMessage);
     }
   };
 
@@ -276,11 +287,291 @@ const AdminUserManagementPage = () => {
 
   
 
+                                          <input
+
+  
+
+                                            type="text"
+
+  
+
+                                            className="form-control"
+
+  
+
+                                            value={formData.login_id}
+
+  
+
+                                            onChange={(e) =>
+
+  
+
+                                              setFormData({ ...formData, login_id: e.target.value })
+
+  
+
+                                            }
+
+  
+
+                                            required={!editingUser} // Only required for new user
+
+  
+
+                                          />
+
+  
+
+                          </div>
+
+  
+
+              
+
+  
+
+                                      {formData.role === 'admin' && (
+
+  
+
+              
+
+  
+
+                                        <div className="form-group">
+
+  
+
+              
+
+  
+
+                                          <label className="form-label">電子郵件 (聯絡)</label>
+
+  
+
+              
+
+  
+
+                                          <input
+
+  
+
+              
+
+  
+
+                                            type="email"
+
+  
+
+              
+
+  
+
+                                            className="form-control"
+
+  
+
+              
+
+  
+
+                                            value={formData.email}
+
+  
+
+              
+
+  
+
+                                            onChange={(e) =>
+
+  
+
+              
+
+  
+
+                                              setFormData({ ...formData, email: e.target.value })
+
+  
+
+              
+
+  
+
+                                            }
+
+  
+
+              
+
+  
+
+                                            required
+
+  
+
+              
+
+  
+
+                                          />
+
+  
+
+              
+
+  
+
+                                        </div>
+
+  
+
+              
+
+  
+
+                                      )}
+
+  
+
+              
+
+  
+
+                          
+
+  
+
+              
+
+  
+
+                                      {formData.role === 'doctor' && (
+
+  
+
+              
+
+  
+
+                                        <div className="form-group">
+
+  
+
+              
+
+  
+
+                                          <label className="form-label">電子郵件</label>
+
+  
+
+              
+
+  
+
+                                          <input
+
+  
+
+              
+
+  
+
+                                            type="email"
+
+  
+
+              
+
+  
+
+                                            className="form-control"
+
+  
+
+              
+
+  
+
+                                            value={formData.email}
+
+  
+
+              
+
+  
+
+                                            onChange={(e) =>
+
+  
+
+              
+
+  
+
+                                              setFormData({ ...formData, email: e.target.value })
+
+  
+
+              
+
+  
+
+                                            }
+
+  
+
+              
+
+  
+
+                                            required
+
+  
+
+              
+
+  
+
+                                          />
+
+  
+
+              
+
+  
+
+                                        </div>
+
+  
+
+              
+
+  
+
+                                      )}
+
+  
+
+                          <div className="form-group">
+
+  
+
+                            <label className="form-label">密碼</label>
+
+  
+
                             <input
 
   
 
-                              type="text"
+                              type="password"
 
   
 
@@ -288,7 +579,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                              value={formData.login_id}
+                              value={formData.password}
 
   
 
@@ -296,7 +587,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                                setFormData({ ...formData, login_id: e.target.value })
+                                setFormData({ ...formData, password: e.target.value })
 
   
 
@@ -304,7 +595,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                              required
+                              required={!editingUser} // Password required only for new user
 
   
 
@@ -320,7 +611,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                          {formData.role === 'admin' && (
+                          {!editingUser && ( // Only show confirm password for new user creation
 
   
 
@@ -328,7 +619,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                              <label className="form-label">電子郵件 (聯絡)</label>
+                              <label className="form-label">確認密碼</label>
 
   
 
@@ -336,7 +627,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                                type="email"
+                                type="password"
 
   
 
@@ -344,7 +635,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                                value={formData.email}
+                                value={formData.confirmPassword}
 
   
 
@@ -352,7 +643,7 @@ const AdminUserManagementPage = () => {
 
   
 
-                                  setFormData({ ...formData, email: e.target.value })
+                                  setFormData({ ...formData, confirmPassword: e.target.value })
 
   
 
@@ -373,32 +664,6 @@ const AdminUserManagementPage = () => {
   
 
                           )}
-
-  
-
-              <div className="form-group">
-
-                <label className="form-label">密碼</label>
-
-                <input
-
-                  type="password"
-
-                  className="form-control"
-
-                  value={formData.password}
-
-                  onChange={(e) =>
-
-                    setFormData({ ...formData, password: e.target.value })
-
-                  }
-
-                  required={!editingUser} // Password required only for new user
-
-                />
-
-              </div>
 
   
 
