@@ -9,5 +9,6 @@
     "cursor-workspace": true
   },
   "github.copilot.chat.agent.autoFix": true,
-  "chat.tools.autoApprove": false
+  "chat.tools.autoApprove": false,
+  "editor.fontSize": 16
 }

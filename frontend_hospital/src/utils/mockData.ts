@@ -1,4 +1,4 @@
-import { Appointment, Schedule, Doctor, MedicalRecord, DashboardStats, AuditLog, QueueStatus } from '../types';
+import { Appointment, Schedule, Doctor, MedicalRecord, DashboardStats, AuditLog, QueueStatus, User } from '../types';
 
 // 假資料：預約
 export const mockAppointments: Appointment[] = [
@@ -254,3 +254,66 @@ export const mockQueueStatus: QueueStatus = {
   estimated_wait_time: 25,
 };
 
+// 假資料：使用者列表
+export const mockUsers: User[] = [
+  {
+    id: 'patient-1',
+    name: '陳小明',
+    email: 'patient@test.com',
+    role: 'patient',
+    phone: '0912345678',
+    dob: '1990-01-15',
+    card_number: '1234567890',
+  },
+  {
+    id: 'patient-2',
+    name: '林小華',
+    email: 'patient2@test.com',
+    role: 'patient',
+    phone: '0923456789',
+    dob: '1985-03-20',
+    card_number: '2345678901',
+  },
+  {
+    id: 'patient-3',
+    name: '黃小美',
+    email: 'patient3@test.com',
+    role: 'patient',
+    phone: '0934567890',
+    dob: '1992-07-10',
+    card_number: '3456789012',
+  },
+  {
+    id: 'doctor-1',
+    name: '王大明',
+    email: 'doctor@test.com',
+    role: 'doctor',
+    specialty: '內科',
+  },
+  {
+    id: 'doctor-2',
+    name: '李美麗',
+    email: 'doctor2@test.com',
+    role: 'doctor',
+    specialty: '小兒科',
+  },
+  {
+    id: 'doctor-3',
+    name: '張志強',
+    email: 'doctor3@test.com',
+    role: 'doctor',
+    specialty: '骨科',
+  },
+  {
+    id: 'admin-1',
+    name: '測試管理員',
+    email: 'admin@test.com',
+    role: 'admin',
+  },
+  {
+    id: 'admin-2',
+    name: '系統管理員',
+    email: 'admin2@test.com',
+    role: 'admin',
+  },
+];
