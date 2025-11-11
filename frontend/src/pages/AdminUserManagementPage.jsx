@@ -30,8 +30,8 @@ const AdminUserManagementPage = () => {
     setIsLoading(true);
     try {
       const [adminsResponse, doctorsResponse] = await Promise.all([
-        api.get('/api/v1/admin/admins/'),
-        api.get('/api/v1/admin/doctors/'),
+        api.get('/api/v1/admins/'),
+        api.get('/api/v1/doctors/'),
       ]);
 
       const admins = adminsResponse.data.map(admin => ({
@@ -66,13 +66,13 @@ const AdminUserManagementPage = () => {
       if (editingUser) {
         // Update user
         if (formData.role === 'admin') {
-          await api.put(`/api/v1/admin/admins/${editingUser.id}`, {
+          await api.put(`/api/v1/admins/${editingUser.id}`, {
             name: formData.name,
             email: formData.email,
             ...(formData.password && { password: formData.password }), // Only send password if it's not empty
           });
         } else if (formData.role === 'doctor') {
-          await api.put(`/api/v1/admin/doctors/${editingUser.id}`, {
+          await api.put(`/api/v1/doctors/${editingUser.id}`, {
             name: formData.name,
             email: formData.email,
             specialty: formData.specialty,
@@ -84,13 +84,13 @@ const AdminUserManagementPage = () => {
       } else {
         // Create user
         if (formData.role === 'admin') {
-          await api.post('/api/v1/admin/admins/', {
+          await api.post('/api/v1/admins/', {
             name: formData.name,
             email: formData.email,
             password: formData.password,
           });
         } else if (formData.role === 'doctor') {
-          await api.post('/api/v1/admin/doctors/', {
+          await api.post('/api/v1/doctors/', {
             name: formData.name,
             email: formData.email,
             password: formData.password,
@@ -136,9 +136,9 @@ const AdminUserManagementPage = () => {
     }
     try {
       if (role === 'admin') {
-        await api.delete(`/api/v1/admin/admins/${userId}`);
+        await api.delete(`/api/v1/admins/${userId}`);
       } else if (role === 'doctor') {
-        await api.delete(`/api/v1/admin/doctors/${userId}`);
+        await api.delete(`/api/v1/doctors/${userId}`);
       }
       alert('帳號刪除成功！');
       loadUsers(); // Reload users after successful deletion
