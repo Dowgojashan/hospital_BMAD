@@ -5,7 +5,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import './HospitalLoginPage.css';
 import api from '../api/axios'; // Use existing axios instance
 import { useAuthStore } from '../store/authStore'; // Use existing auth store
-import { decodeToken } from '../utils/auth'; // Use existing decodeToken
 
 const HospitalLoginPage = () => {
   const navigate = useNavigate();
@@ -34,11 +33,11 @@ const HospitalLoginPage = () => {
       const { access_token } = resp.data;
       setToken(access_token);
 
-      const decodedToken = decodeToken(access_token);
-      if (decodedToken && decodedToken.role === 'admin') {
-        navigate('/admin/account-management');
+      const user = useAuthStore.getState().user; // Get the user object from the store
+      if (user && user.role === 'admin') {
+        navigate('/admin/dashboard'); // Navigate to the correct admin dashboard
       } else {
-        navigate('/dashboard');
+        navigate('/'); // Navigate to the main home page for patients/doctors
       }
     } catch (err) {
       setError(err.response?.data?.detail || '登入失敗，請檢查帳號密碼');

@@ -1,0 +1,70 @@
+.appointments-select {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.appointment-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 2px solid #ced4da; /* var(--medium-gray) */
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.appointment-option:hover {
+  border-color: #007bff; /* var(--primary-blue) */
+  background: #e0f7fa; /* var(--accent-blue) */
+}
+
+.appointment-option.active {
+  border-color: #007bff; /* var(--primary-blue) */
+  background: #e0f7fa; /* var(--accent-blue) */
+}
+
+.checkin-actions {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e0f7fa; /* var(--accent-blue) */
+}
+
+.queue-status-card {
+  background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%); /* var(--accent-blue), var(--white) */
+}
+
+.queue-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.queue-item {
+  text-align: center;
+  padding: 20px;
+  background: #ffffff; /* var(--white) */
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* var(--shadow) */
+}
+
+.queue-label {
+  display: block;
+  font-size: 14px;
+  color: #6c757d; /* var(--text-medium) */
+  margin-bottom: 8px;
+}
+
+.queue-value {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  color: #007bff; /* var(--primary-blue) */
+}
+
+.text-success {
+    color: #28a745;
+}

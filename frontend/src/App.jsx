@@ -2,10 +2,22 @@ import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom'
 import HospitalLoginPage from './pages/HospitalLoginPage'
 import HospitalRegisterPage from './pages/HospitalRegisterPage'
+import HomePage from './pages/HomePage'
+import AppointmentsPage from './pages/AppointmentsPage'
+import BookAppointmentPage from './pages/BookAppointmentPage'
+import CheckInPage from './pages/CheckInPage'
+import MedicalRecordsPage from './pages/MedicalRecordsPage'
+import ProfilePage from './pages/ProfilePage'
+import SchedulesPage from './pages/SchedulesPage'
+import DoctorSchedulesPage from './pages/DoctorSchedulesPage'
+import DoctorRecordsPage from './pages/DoctorRecordsPage'
+import LeaveRequestPage from './pages/LeaveRequestPage'
+import AdminDashboardPage from './pages/AdminDashboardPage' // Import AdminDashboardPage
+import AdminScheduleManagementPage from './pages/AdminScheduleManagementPage' // Import AdminScheduleManagementPage
+import AdminUserManagementPage from './pages/AdminUserManagementPage' // Import AdminUserManagementPage
+import AdminAuditLogPage from './pages/AdminAuditLogPage' // Import AdminAuditLogPage
 import { useAuthStore } from './store/authStore'
 import ProtectedAdminRoute from './components/ProtectedAdminRoute'
-import AccountManagementPage from './components/AccountManagementPage'
-import { decodeToken } from './utils/auth'
 
 function Dashboard() {
   console.info('Dashboard: render')
@@ -25,6 +37,8 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+import Navbar from './components/Navbar'; // Import Navbar component
+
 function AppContent() {
   console.info('AppContent: render')
   const navigate = useNavigate()
@@ -35,18 +49,28 @@ function AppContent() {
     navigate('/login')
   }
 
-  const decodedToken = accessToken ? decodeToken(accessToken) : null;
-  const isAdmin = decodedToken && decodedToken.role === 'admin';
-
   return (
     <>
-      {/* Removed navigation links and buttons */}
+      <Navbar /> {/* Render Navbar component */}
       <Routes>
         <Route path="/login" element={<HospitalLoginPage />} />
         <Route path="/register" element={<HospitalRegisterPage />} />
+        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+        <Route path="/appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
+        <Route path="/book" element={<ProtectedRoute><BookAppointmentPage /></ProtectedRoute>} />
+        <Route path="/checkin" element={<ProtectedRoute><CheckInPage /></ProtectedRoute>} />
+        <Route path="/records" element={<ProtectedRoute><MedicalRecordsPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/schedules" element={<ProtectedRoute><SchedulesPage /></ProtectedRoute>} />
+        <Route path="/doctor/schedules" element={<ProtectedRoute><DoctorSchedulesPage /></ProtectedRoute>} />
+        <Route path="/doctor/records" element={<ProtectedRoute><DoctorRecordsPage /></ProtectedRoute>} />
+        <Route path="/doctor/leave" element={<ProtectedRoute><LeaveRequestPage /></ProtectedRoute>} />
+        <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} /> {/* Route for AdminDashboardPage */}
+        <Route path="/admin/schedules" element={<ProtectedAdminRoute><AdminScheduleManagementPage /></ProtectedAdminRoute>} /> {/* Route for AdminScheduleManagementPage */}
+        <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUserManagementPage /></ProtectedAdminRoute>} /> {/* Route for AdminUserManagementPage */}
+        <Route path="/admin/audit" element={<ProtectedAdminRoute><AdminAuditLogPage /></ProtectedAdminRoute>} /> {/* Route for AdminAuditLogPage */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/admin/account-management" element={<ProtectedAdminRoute><AccountManagementPage /></ProtectedAdminRoute>} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* The original /admin/account-management route is replaced by /admin/users */}
       </Routes>
     </>
   )

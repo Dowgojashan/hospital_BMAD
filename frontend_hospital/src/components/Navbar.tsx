@@ -19,10 +19,6 @@ const Navbar: React.FC = () => {
     return location.pathname === path ? 'active' : '';
   };
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <nav className="navbar">
       <div className="navbar-content">
@@ -30,88 +26,98 @@ const Navbar: React.FC = () => {
           <HospitalLogo size={40} showText={true} />
         </Link>
         <ul className="navbar-nav">
-          {user.role === 'patient' && (
+          {user ? (
             <>
+              {user.role === 'patient' && (
+                <>
+                  <li className="nav-item">
+                    <Link to="/appointments" className={`nav-link ${isActive('/appointments')}`}>
+                      我的預約
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/book" className={`nav-link ${isActive('/book')}`}>
+                      線上掛號
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/schedules" className={`nav-link ${isActive('/schedules')}`}>
+                      查詢班表
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/checkin" className={`nav-link ${isActive('/checkin')}`}>
+                      報到
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/records" className={`nav-link ${isActive('/records')}`}>
+                      我的病歷
+                    </Link>
+                  </li>
+                </>
+              )}
+              {user.role === 'doctor' && (
+                <>
+                  <li className="nav-item">
+                    <Link to="/doctor/schedules" className={`nav-link ${isActive('/doctor/schedules')}`}>
+                      我的班表
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/doctor/leave" className={`nav-link ${isActive('/doctor/leave')}`}>
+                      停診申請
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/doctor/records" className={`nav-link ${isActive('/doctor/records')}`}>
+                      病歷管理
+                    </Link>
+                  </li>
+                </>
+              )}
+              {user.role === 'admin' && (
+                <>
+                  <li className="nav-item">
+                    <Link to="/admin/dashboard" className={`nav-link ${isActive('/admin/dashboard')}`}>
+                      儀表板
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/admin/schedules" className={`nav-link ${isActive('/admin/schedules')}`}>
+                      班表管理
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/admin/users" className={`nav-link ${isActive('/admin/users')}`}>
+                      帳號管理
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <Link to="/admin/audit" className={`nav-link ${isActive('/admin/audit')}`}>
+                      審計日誌
+                    </Link>
+                  </li>
+                </>
+              )}
               <li className="nav-item">
-                <Link to="/appointments" className={`nav-link ${isActive('/appointments')}`}>
-                  我的預約
+                <Link to="/profile" className={`nav-link ${isActive('/profile')}`}>
+                  個人資料
                 </Link>
               </li>
               <li className="nav-item">
-                <Link to="/book" className={`nav-link ${isActive('/book')}`}>
-                  線上掛號
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/schedules" className={`nav-link ${isActive('/schedules')}`}>
-                  查詢班表
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/checkin" className={`nav-link ${isActive('/checkin')}`}>
-                  報到
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/records" className={`nav-link ${isActive('/records')}`}>
-                  我的病歷
-                </Link>
+                <button onClick={handleLogout} className="btn btn-secondary" style={{ marginLeft: '8px' }}>
+                  登出
+                </button>
               </li>
             </>
+          ) : (
+            <li className="nav-item">
+              <Link to="/login" className={`nav-link ${isActive('/login')}`}>
+                登入
+              </Link>
+            </li>
           )}
-          {user.role === 'doctor' && (
-            <>
-              <li className="nav-item">
-                <Link to="/doctor/schedules" className={`nav-link ${isActive('/doctor/schedules')}`}>
-                  我的班表
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/doctor/leave" className={`nav-link ${isActive('/doctor/leave')}`}>
-                  停診申請
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/doctor/records" className={`nav-link ${isActive('/doctor/records')}`}>
-                  病歷管理
-                </Link>
-              </li>
-            </>
-          )}
-          {user.role === 'admin' && (
-            <>
-              <li className="nav-item">
-                <Link to="/admin/dashboard" className={`nav-link ${isActive('/admin/dashboard')}`}>
-                  儀表板
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/admin/schedules" className={`nav-link ${isActive('/admin/schedules')}`}>
-                  班表管理
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/admin/users" className={`nav-link ${isActive('/admin/users')}`}>
-                  帳號管理
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/admin/audit" className={`nav-link ${isActive('/admin/audit')}`}>
-                  審計日誌
-                </Link>
-              </li>
-            </>
-          )}
-          <li className="nav-item">
-            <Link to="/profile" className={`nav-link ${isActive('/profile')}`}>
-              個人資料
-            </Link>
-          </li>
-          <li className="nav-item">
-            <button onClick={handleLogout} className="btn btn-secondary" style={{ marginLeft: '8px' }}>
-              登出
-            </button>
-          </li>
         </ul>
       </div>
     </nav>

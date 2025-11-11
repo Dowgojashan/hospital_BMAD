@@ -1,0 +1,4 @@
+/* UserManagement specific styles */
+.users-table {
+  overflow-x: auto;
+}
