@@ -29,9 +29,13 @@ async def get_current_active_admin(db: Session = Depends(get_db), token: str = D
         user_role: str = payload.get("role")
         if user_id is None or user_role != "admin":
             raise credentials_exception
+        try:
+            user_uuid = uuid.UUID(user_id)
+        except ValueError:
+            raise credentials_exception
     except Exception:
         raise credentials_exception
-    admin = db.query(Admin).filter(Admin.admin_id == user_id).first()
+    admin = db.query(Admin).filter(Admin.admin_id == user_uuid).first()
     if admin is None:
         raise credentials_exception
     return admin

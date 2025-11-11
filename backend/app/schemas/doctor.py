@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 from datetime import datetime
 import uuid
@@ -18,11 +18,10 @@ class DoctorUpdate(BaseModel):
 
 
 class DoctorPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     doctor_id: uuid.UUID
     doctor_login_id: str
     name: str
     specialty: str
     created_at: datetime
-
-    class Config:
-        orm_mode = True

@@ -12,3 +12,9 @@ python-dotenv
 
 # bcrypt for passlib bcrypt backend compatibility
 bcrypt==3.2.0
+pydantic-settings
+
+# Testing
+pytest
+httpx
+pytest-asyncio
