@@ -26,4 +26,5 @@ class DoctorPublic(BaseModel):
     doctor_login_id: str
     name: str
     specialty: str
+    email: EmailStr
     created_at: datetime
