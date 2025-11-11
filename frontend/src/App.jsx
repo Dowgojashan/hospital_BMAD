@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom'
-import LoginPage from './components/LoginPage'
-import RegisterPage from './components/RegisterPage'
+import HospitalLoginPage from './pages/HospitalLoginPage'
+import HospitalRegisterPage from './pages/HospitalRegisterPage'
 import { useAuthStore } from './store/authStore'
 import ProtectedAdminRoute from './components/ProtectedAdminRoute'
 import AccountManagementPage from './components/AccountManagementPage'
@@ -40,26 +40,10 @@ function AppContent() {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid #eee' }}>
-        <div>
-          {accessToken && (
-            <>
-              <Link to="/dashboard" style={{ marginRight: '15px' }}>Dashboard</Link>
-              {isAdmin && <Link to="/admin/account-management" style={{ marginRight: '15px' }}>Admin Management</Link>}
-            </>
-          )}
-        </div>
-        <div>
-          {accessToken ? (
-            <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: 'blue', cursor: 'pointer' }}>登出</button>
-          ) : (
-            <Link to="/login">登入</Link>
-          )}
-        </div>
-      </div>
+      {/* Removed navigation links and buttons */}
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<HospitalLoginPage />} />
+        <Route path="/register" element={<HospitalRegisterPage />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/admin/account-management" element={<ProtectedAdminRoute><AccountManagementPage /></ProtectedAdminRoute>} />
         <Route path="/" element={<Navigate to="/login" replace />} />

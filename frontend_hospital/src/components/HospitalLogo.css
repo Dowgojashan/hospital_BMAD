@@ -1,0 +1,27 @@
+.hospital-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hospital-logo-svg {
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.hospital-logo-text {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .hospital-logo-text {
+    font-size: 18px;
+  }
+}
+

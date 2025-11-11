@@ -1,0 +1,345 @@
+/* 藍白專業醫院風格主題 */
+:root {
+  --primary-blue: #0066cc;
+  --primary-blue-dark: #0052a3;
+  --primary-blue-light: #3399ff;
+  --secondary-blue: #4a90e2;
+  --accent-blue: #e6f2ff;
+  --white: #ffffff;
+  --light-gray: #f5f7fa;
+  --medium-gray: #e1e8ed;
+  --dark-gray: #657786;
+  --text-dark: #14171a;
+  --text-medium: #657786;
+  --success-green: #28a745;
+  --warning-orange: #ffc107;
+  --error-red: #dc3545;
+  --shadow: rgba(0, 102, 204, 0.1);
+  --shadow-hover: rgba(0, 102, 204, 0.2);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--light-gray);
+  color: var(--text-dark);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* 通用按鈕樣式 */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: var(--primary-blue);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-blue-dark);
+  box-shadow: 0 4px 12px var(--shadow-hover);
+}
+
+.btn-secondary {
+  background-color: var(--white);
+  color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-secondary:hover {
+  background-color: var(--accent-blue);
+}
+
+.btn-success {
+  background-color: var(--success-green);
+  color: var(--white);
+}
+
+.btn-danger {
+  background-color: var(--error-red);
+  color: var(--white);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 卡片樣式 */
+.card {
+  background: var(--white);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  border-bottom: 2px solid var(--accent-blue);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--primary-blue);
+  margin: 0;
+}
+
+/* 表單樣式 */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--medium-gray);
+  border-radius: 6px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px var(--accent-blue);
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--medium-gray);
+  border-radius: 6px;
+  font-size: 16px;
+  background-color: var(--white);
+  cursor: pointer;
+}
+
+/* 表格樣式 */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  background: var(--white);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table thead {
+  background-color: var(--primary-blue);
+  color: var(--white);
+}
+
+.table thead tr {
+  border-spacing: 0;
+}
+
+.table th,
+.table td {
+  padding: 16px;
+  text-align: left;
+}
+
+.table thead th {
+  padding: 16px;
+  border-bottom: none;
+}
+
+.table tbody tr {
+  background-color: var(--white);
+  border: 1px solid var(--medium-gray);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.table tbody td {
+  border-bottom: none;
+  border-top: none;
+}
+
+.table tbody tr:first-child td:first-child {
+  border-top-left-radius: 6px;
+}
+
+.table tbody tr:first-child td:last-child {
+  border-top-right-radius: 6px;
+}
+
+.table tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 6px;
+}
+
+.table tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 6px;
+}
+
+.table tbody tr:hover {
+  background-color: var(--accent-blue);
+  box-shadow: 0 2px 6px rgba(0, 102, 204, 0.15);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* 導航欄樣式 */
+.navbar {
+  background-color: var(--white);
+  box-shadow: 0 2px 8px var(--shadow);
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  height: 70px;
+}
+
+.navbar-brand {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+.navbar-nav {
+  display: flex;
+  list-style: none;
+  gap: 8px;
+}
+
+.nav-item {
+  margin: 0;
+}
+
+.nav-link {
+  padding: 10px 16px;
+  color: var(--text-dark);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  background-color: var(--accent-blue);
+  color: var(--primary-blue);
+}
+
+.nav-link.active {
+  background-color: var(--primary-blue);
+  color: var(--white);
+}
+
+/* 容器樣式 */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--primary-blue);
+  margin-bottom: 8px;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: var(--text-medium);
+}
+
+/* 狀態標籤 */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.badge-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.badge-info {
+  background-color: var(--accent-blue);
+  color: var(--primary-blue);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .navbar-content {
+    flex-direction: column;
+    height: auto;
+    padding: 16px 0;
+  }
+
+  .navbar-nav {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .card {
+    padding: 16px;
+  }
+}
