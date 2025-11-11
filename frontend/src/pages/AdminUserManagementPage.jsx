@@ -834,23 +834,27 @@ const AdminUserManagementPage = () => {
 
                       <td>{getRoleBadge(user.role)}</td>
 
-                                            <td>
+                                                                  <td>
 
-                                              {user.role === 'doctor' && user.specialty ? (
+                                                                    {user.role === 'doctor' ? (
 
-                                                <span>{user.specialty}</span>
+                                                                      <>
 
-                                              ) : user.role === 'doctor' && user.email ? (
+                                                                        {user.specialty && <span>專科: {user.specialty}</span>}
 
-                                                <span>{user.email}</span>
+                                                                        {user.specialty && user.email && <br />}
 
-                                              ) : (
+                                                                        {user.email && <span>Email: {user.email}</span>}
 
-                                                <span style={{ color: '#6c757d' /* var(--text-medium) */ }}>-</span>
+                                                                      </>
 
-                                              )}
+                                                                    ) : (
 
-                                            </td>
+                                                                      <span style={{ color: '#6c757d' /* var(--text-medium) */ }}>-</span>
+
+                                                                    )}
+
+                                                                  </td>
 
                       <td>
 
