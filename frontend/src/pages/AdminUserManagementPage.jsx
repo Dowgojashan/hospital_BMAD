@@ -62,6 +62,7 @@ const AdminUserManagementPage = () => {
         id: doctor.doctor_id,
         name: doctor.name,
         login_id: doctor.doctor_login_id,
+        email: doctor.email, // Correctly add email for doctors
         role: 'doctor',
         specialty: doctor.specialty,
       }));
@@ -814,7 +815,7 @@ const AdminUserManagementPage = () => {
 
                     <th>角色</th>
 
-                    <th>專科/電子郵件</th>
+                    <th>專科/電話</th>
 
                     <th>操作</th>
 
@@ -834,27 +835,19 @@ const AdminUserManagementPage = () => {
 
                       <td>{getRoleBadge(user.role)}</td>
 
-                                                                  <td>
+                                                                                        <td>
 
-                                                                    {user.role === 'doctor' ? (
+                                                                                          {user.role === 'doctor' && user.specialty ? (
 
-                                                                      <>
+                                                                                            <span>{user.specialty}</span>
 
-                                                                        {user.specialty && <span>專科: {user.specialty}</span>}
+                                                                                          ) : (
 
-                                                                        {user.specialty && user.email && <br />}
+                                                                                            <span style={{ color: '#6c757d' /* var(--text-medium) */ }}>-</span>
 
-                                                                        {user.email && <span>Email: {user.email}</span>}
+                                                                                          )}
 
-                                                                      </>
-
-                                                                    ) : (
-
-                                                                      <span style={{ color: '#6c757d' /* var(--text-medium) */ }}>-</span>
-
-                                                                    )}
-
-                                                                  </td>
+                                                                                        </td>
 
                       <td>
 
