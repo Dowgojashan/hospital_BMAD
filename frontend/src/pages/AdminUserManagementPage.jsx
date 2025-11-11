@@ -27,6 +27,20 @@ const AdminUserManagementPage = () => {
     loadUsers();
   }, []);
 
+  const handleAddNewUserClick = () => {
+    setEditingUser(null); // Clear any editing user
+    setFormData({ // Reset formData to initial empty state
+      name: '',
+      login_id: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      role: 'admin', // Default role
+      specialty: '',
+    });
+    setShowForm(true); // Show the form
+  };
+
   const loadUsers = async () => {
     setIsLoading(true);
     try {
@@ -197,17 +211,17 @@ const AdminUserManagementPage = () => {
 
           <p className="page-subtitle">管理醫師和管理員帳號</p>
 
-          <button
+                    <button
 
-            className="btn btn-primary"
+                      className="btn btn-primary"
 
-            onClick={() => setShowForm(true)}
+                      onClick={handleAddNewUserClick}
 
-          >
+                    >
 
-            新增帳號
+                      新增帳號
 
-          </button>
+                    </button>
 
         </div>
 
