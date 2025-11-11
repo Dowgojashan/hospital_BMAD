@@ -13,6 +13,7 @@ class Doctor(Base):
     password_hash = Column(String, nullable=False)
     name = Column(String, nullable=False)
     specialty = Column(String, nullable=False)
+    email = Column(String, nullable=False, unique=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
