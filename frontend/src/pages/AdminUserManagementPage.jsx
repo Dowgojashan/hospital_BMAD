@@ -82,6 +82,11 @@ const AdminUserManagementPage = () => {
       alert('密碼與確認密碼不符，請重新輸入。');
       return;
     }
+
+    if (formData.password && formData.password.length < 6) {
+      alert('密碼長度不得少於6個字元。');
+      return;
+    }
     try {
       if (editingUser) {
         // Update user
@@ -809,7 +814,7 @@ const AdminUserManagementPage = () => {
 
                     <th>角色</th>
 
-                    <th>專科/電話</th>
+                    <th>專科/電子郵件</th>
 
                     <th>操作</th>
 
@@ -829,19 +834,23 @@ const AdminUserManagementPage = () => {
 
                       <td>{getRoleBadge(user.role)}</td>
 
-                      <td>
+                                            <td>
 
-                        {user.role === 'doctor' && user.specialty ? (
+                                              {user.role === 'doctor' && user.specialty ? (
 
-                          <span>{user.specialty}</span>
+                                                <span>{user.specialty}</span>
 
-                        ) : (
+                                              ) : user.role === 'doctor' && user.email ? (
 
-                          <span style={{ color: '#6c757d' /* var(--text-medium) */ }}>-</span>
+                                                <span>{user.email}</span>
 
-                        )}
+                                              ) : (
 
-                      </td>
+                                                <span style={{ color: '#6c757d' /* var(--text-medium) */ }}>-</span>
+
+                                              )}
+
+                                            </td>
 
                       <td>
 
