@@ -89,4 +89,51 @@ def get_doctor_schedules(db: Session, doctor_id: uuid.UUID, month: Optional[int]
     return results
 
 
+def list_public_schedules(db: Session, specialty: Optional[str] = None, doctor_id: Optional[uuid.UUID] = None, month: Optional[int] = None, year: Optional[int] = None, time_period: Optional[str] = None) -> List[dict]:
+    query = db.query(Schedule, Doctor).join(Doctor, Schedule.doctor_id == Doctor.doctor_id)
+
+    if specialty:
+        query = query.filter(Doctor.specialty == specialty)
+    if doctor_id:
+        query = query.filter(Schedule.doctor_id == doctor_id)
+
+    if month and year:
+        start_date = date(year, month, 1)
+        if month == 12:
+            end_date = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = date(year, month + 1, 1) - timedelta(days=1)
+        query = query.filter(Schedule.date >= start_date, Schedule.date <= end_date)
+    elif month:
+        current_year = date.today().year
+        start_date = date(current_year, month, 1)
+        if month == 12:
+            end_date = date(current_year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end_date = date(current_year, month + 1, 1) - timedelta(days=1)
+        query = query.filter(Schedule.date >= start_date, Schedule.date <= end_date)
+    elif year:
+        start_date = date(year, 1, 1)
+        end_date = date(year, 12, 31)
+        query = query.filter(Schedule.date >= start_date, Schedule.date <= end_date)
+
+    if time_period:
+        query = query.filter(Schedule.time_period == time_period)
+    
+    results = []
+    for schedule_obj, doctor_obj in query.all():
+        schedule_data = {
+            "schedule_id": schedule_obj.schedule_id,
+            "doctor_id": schedule_obj.doctor_id,
+            "date": schedule_obj.date,
+            "time_period": schedule_obj.time_period,
+            "recurring_group_id": schedule_obj.recurring_group_id,
+            "created_at": schedule_obj.created_at,
+            "doctor_name": doctor_obj.name,
+            "specialty": doctor_obj.specialty,
+        }
+        results.append(schedule_data)
+    return results
+
+
 

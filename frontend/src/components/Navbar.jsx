@@ -37,12 +37,7 @@ const Navbar = () => {
                   </li>
                   <li className="nav-item">
                     <Link to="/book" className={`nav-link ${isActive('/book')}`}>
-                      線上掛號
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link to="/schedules" className={`nav-link ${isActive('/schedules')}`}>
-                      查詢班表
+                      線上掛號/查詢班表
                     </Link>
                   </li>
                   <li className="nav-item">

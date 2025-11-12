@@ -11,8 +11,11 @@ def get_doctor(db: Session, doctor_id: uuid.UUID) -> Optional[Doctor]:
     return db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
 
 
-def list_doctors(db: Session, skip: int = 0, limit: int = 100) -> List[Doctor]:
-    return db.query(Doctor).offset(skip).limit(limit).all()
+def list_doctors(db: Session, specialty: Optional[str] = None, skip: int = 0, limit: int = 100) -> List[Doctor]:
+    query = db.query(Doctor)
+    if specialty:
+        query = query.filter(Doctor.specialty == specialty)
+    return query.offset(skip).limit(limit).all()
 
 
 def create_doctor(db: Session, doctor_in: DoctorCreate) -> Doctor:

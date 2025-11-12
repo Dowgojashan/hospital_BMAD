@@ -8,7 +8,6 @@ import BookAppointmentPage from './pages/BookAppointmentPage'
 import CheckInPage from './pages/CheckInPage'
 import MedicalRecordsPage from './pages/MedicalRecordsPage'
 import ProfilePage from './pages/ProfilePage'
-import SchedulesPage from './pages/SchedulesPage'
 import DoctorSchedulesPage from './pages/DoctorSchedulesPage'
 import DoctorRecordsPage from './pages/DoctorRecordsPage'
 import LeaveRequestPage from './pages/LeaveRequestPage'
@@ -61,7 +60,6 @@ function AppContent() {
         <Route path="/checkin" element={<ProtectedRoute><CheckInPage /></ProtectedRoute>} />
         <Route path="/records" element={<ProtectedRoute><MedicalRecordsPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-        <Route path="/schedules" element={<ProtectedRoute><SchedulesPage /></ProtectedRoute>} />
         <Route path="/doctor/schedules" element={<ProtectedRoute><DoctorSchedulesPage /></ProtectedRoute>} />
         <Route path="/doctor/records" element={<ProtectedRoute><DoctorRecordsPage /></ProtectedRoute>} />
         <Route path="/doctor/leave" element={<ProtectedRoute><LeaveRequestPage /></ProtectedRoute>} />
