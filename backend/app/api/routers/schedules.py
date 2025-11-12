@@ -87,7 +87,6 @@ def get_schedule_endpoint(
 def update_schedule_endpoint(
     schedule_id: uuid.UUID,
     schedule_in: ScheduleUpdate,
-    new_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
@@ -95,7 +94,7 @@ def update_schedule_endpoint(
     Update a schedule. Only accessible by administrators.
     """
     try:
-        db_schedule = crud_schedule.update_schedule(db=db, schedule_id=schedule_id, schedule_in=schedule_in, new_date=new_date)
+        db_schedule = crud_schedule.update_schedule(db=db, schedule_id=schedule_id, schedule_in=schedule_in)
         if not db_schedule:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
         return db_schedule

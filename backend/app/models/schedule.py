@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Date, String, DateTime, ForeignKey, func # Import String
+from sqlalchemy import Column, Date, String, DateTime, ForeignKey, func, Integer # Import String, Integer
 from sqlalchemy.dialects.postgresql import UUID
 
 from ..db.base import Base
@@ -12,7 +12,9 @@ class Schedule(Base):
     doctor_id = Column(UUID(as_uuid=True), ForeignKey("DOCTOR.doctor_id"), nullable=False)
     recurring_group_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     date = Column(Date, nullable=False)
-    time_period = Column(String, nullable=False) # New time_period column
+    time_period = Column(String, nullable=False)
+    max_patients = Column(Integer, nullable=False, default=10) # New max_patients column
+    booked_patients = Column(Integer, nullable=False, default=0) # New booked_patients column
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):

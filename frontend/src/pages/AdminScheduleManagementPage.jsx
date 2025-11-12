@@ -28,6 +28,7 @@ const AdminScheduleManagementPage = () => {
     doctor_id: '',
     date: '',
     time_period: '',
+    max_patients: '10',
   });
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringDayOfWeek, setRecurringDayOfWeek] = useState('0');
@@ -125,22 +126,20 @@ const AdminScheduleManagementPage = () => {
           const recurringUpdateData = {
             doctor_id: formData.doctor_id,
             time_period: formData.time_period,
-            start_date: editingSchedule.date, // The start date is the date of the item being edited
+            start_date: formData.date,
             day_of_week: parseInt(recurringDayOfWeek, 10),
             months_to_create: parseInt(recurringMonths, 10),
+            max_patients: parseInt(formData.max_patients, 10),
           };
           await api.put(`/api/v1/schedules/recurring/${editingSchedule.recurring_group_id}`, recurringUpdateData);
           setMessage('週期性班表更新成功！');
         } else {
           // Handle single update, and "break" the link if it was recurring
-          const { date, ...restOfData } = formData;
           const updatePayload = {
-            ...restOfData,
+            ...formData, // Use formData directly, it already contains the date
             recurring_group_id: null, // Break the link to the recurring group
           };
-          await api.put(`/api/v1/schedules/${editingSchedule.schedule_id}`, updatePayload, {
-            params: { new_date: date }
-          });
+          await api.put(`/api/v1/schedules/${editingSchedule.schedule_id}`, updatePayload);
           setMessage('班表更新成功！');
         }
       } else if (isRecurring) {
@@ -151,6 +150,7 @@ const AdminScheduleManagementPage = () => {
           start_date: formData.date,
           day_of_week: parseInt(recurringDayOfWeek, 10),
           months_to_create: parseInt(recurringMonths, 10),
+          max_patients: parseInt(formData.max_patients, 10),
         };
         await api.post('/api/v1/schedules/recurring', recurringData);
         setMessage('週期性班表新增成功！');
@@ -201,7 +201,7 @@ const AdminScheduleManagementPage = () => {
         // Adjust for timezone offset before getting the day
         const dayOfWeek = (scheduleDate.getUTCDay() + 6) % 7; // Convert Sunday=0 to Monday=0
         setRecurringDayOfWeek(String(dayOfWeek));
-        setRecurringMonths('1'); // Default to 1 month for the new pattern
+        setRecurringMonths(recurringMonths); // Keep the current value or allow user to set
       } else {
         // Edit only the single schedule instance
         setEditMode('single');
@@ -211,6 +211,7 @@ const AdminScheduleManagementPage = () => {
           doctor_id: schedule.doctor_id,
           date: schedule.date,
           time_period: schedule.time_period,
+          max_patients: schedule.max_patients,
         });
       }
     } else {
@@ -218,12 +219,12 @@ const AdminScheduleManagementPage = () => {
       setEditMode('single');
       setEditingSchedule(schedule);
       setIsRecurring(false);
-      setFormData({
-        doctor_id: schedule.doctor_id,
-        date: schedule.date,
-        time_period: schedule.time_period,
-      });
-    }
+              setFormData({
+                doctor_id: schedule.doctor_id,
+                date: schedule.date,
+                time_period: schedule.time_period,
+                max_patients: schedule.max_patients,
+              });    }
 
     const doctor = doctors.find(doc => doc.id === schedule.doctor_id);
     if (doctor) {
@@ -285,7 +286,7 @@ const AdminScheduleManagementPage = () => {
           onClick={() => {
             setShowForm(true);
             setEditingSchedule(null);
-            setFormData({ doctor_id: '', date: '', time_period: '' });
+            setFormData({ doctor_id: '', date: '', time_period: '', max_patients: '10' });
             setSelectedSpecialty('');
             setIsRecurring(false);
             setRecurringDayOfWeek('0');
@@ -379,7 +380,6 @@ const AdminScheduleManagementPage = () => {
                   setFormData({ ...formData, date: e.target.value })
                 }
                 required
-                disabled={editingSchedule && editMode === 'future'}
               />
             </div>
 
@@ -409,7 +409,6 @@ const AdminScheduleManagementPage = () => {
                     value={recurringMonths}
                     onChange={(e) => setRecurringMonths(e.target.value)}
                     required={isRecurring && !editingSchedule}
-                    disabled={editingSchedule && editMode === 'future'}
                   >
                     <option value="1">一個月</option>
                     <option value="2">兩個月</option>
@@ -436,6 +435,20 @@ const AdminScheduleManagementPage = () => {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">最大預約人數</label>
+              <input
+                type="number"
+                className="form-control"
+                value={formData.max_patients}
+                onChange={(e) =>
+                  setFormData({ ...formData, max_patients: e.target.value })
+                }
+                required
+                min="1"
+              />
             </div>
 
             <div className="form-actions">
@@ -527,6 +540,7 @@ const AdminScheduleManagementPage = () => {
                       <span className="doctor-name">{schedule.doctor_name}</span>
                       <span className="time-period">
                         ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label})
+                        - 已預約 {schedule.booked_patients} / 最多 {schedule.max_patients} 人
                       </span>
                       <div className="schedule-actions">
                         <button onClick={() => handleEdit(schedule)} className="btn-edit">編輯</button>

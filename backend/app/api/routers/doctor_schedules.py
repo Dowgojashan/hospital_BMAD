@@ -8,20 +8,9 @@ from app.db.session import get_db
 from app.models.doctor import Doctor
 from app.crud import crud_schedule
 from app.schemas.schedule import SchedulePublic, ScheduleDoctorPublic # Import ScheduleDoctorPublic
-from app.api.dependencies import get_current_active_user_with_role
+from app.api.dependencies import get_current_active_doctor # Import the new dependency
 
 router = APIRouter()
-
-async def get_current_active_doctor(
-    current_user_with_role: tuple = Depends(get_current_active_user_with_role),
-) -> Doctor:
-    user, role = current_user_with_role
-    if role != "doctor":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only doctors can access this resource.",
-        )
-    return user
 
 @router.get("/me/schedules", response_model=List[ScheduleDoctorPublic]) # Use ScheduleDoctorPublic
 def list_my_schedules(

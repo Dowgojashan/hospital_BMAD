@@ -14,3 +14,42 @@
   background: #e0f7fa; /* var(--accent-blue) */
   border-radius: 6px;
 }
+
+.schedule-entry {
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid transparent; /* Default border */
+}
+
+.schedule-entry:hover {
+  background-color: #f0f8ff; /* Light hover effect */
+}
+
+.schedule-entry.selected {
+  background-color: #e0f7fa; /* Light blue background for selected slot */
+  border: 1px solid #00bcd4; /* Cyan border */
+  box-shadow: 0 0 5px rgba(0, 188, 212, 0.5);
+}
+
+.booking-confirmation {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.booking-confirmation p {
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.booking-confirmation p strong {
+  color: #007bff;
+}
+

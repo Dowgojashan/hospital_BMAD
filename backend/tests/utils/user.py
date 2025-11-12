@@ -19,7 +19,8 @@ def create_random_doctor(db: Session) -> Doctor:
         doctor_login_id=random_lower_string(),
         password=random_lower_string(),
         name=random_lower_string(),
-        specialty="Cardiology"
+        specialty="Cardiology",
+        email=random_email() # Add email field
     )
     return crud_doctor.create_doctor(db=db, doctor_in=doctor_in)
 

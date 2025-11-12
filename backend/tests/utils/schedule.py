@@ -19,7 +19,6 @@ def create_random_schedule(db: Session, doctor_id: uuid.UUID) -> crud_schedule.S
     schedule_in = ScheduleCreate(
         doctor_id=doctor_id,
         date=random_date(),
-        start=random_time(),
-        end=random_time()
+        time_period="morning" # Use time_period instead of start and end
     )
     return crud_schedule.create_schedule(db=db, schedule_in=schedule_in)

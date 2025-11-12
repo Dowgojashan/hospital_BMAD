@@ -10,13 +10,13 @@ app = FastAPI(
 # Set all CORS enabled origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from app.api.routers import auth, admin_management, schedules, profile, doctor_schedules, patient_schedules
+from app.api.routers import auth, admin_management, schedules, profile, doctor_schedules, patient_schedules, patient_appointments
 
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(admin_management.router, prefix="/api/v1", tags=["admin-management"])
@@ -24,6 +24,7 @@ app.include_router(schedules.router, prefix="/api/v1/schedules", tags=["schedule
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["profile-management"])
 app.include_router(doctor_schedules.router, prefix="/api/v1/doctors", tags=["doctor-schedules"])
 app.include_router(patient_schedules.router, prefix="/api/v1/patient", tags=["patient-schedules"])
+app.include_router(patient_appointments.router, prefix="/api/v1/patient", tags=["patient-appointments"])
 
 @app.get("/")
 def read_root():

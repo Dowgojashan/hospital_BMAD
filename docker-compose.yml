@@ -11,6 +11,8 @@ services:
       - /app/.venv
     env_file:
       - ./.env
+    environment:
+      SECRET_KEY: "your-very-strong-and-secret-key-that-is-at-least-32-characters-long-and-randomly-generated" # Replace with a strong, random key
     ports:
       - '8000:8000'
     depends_on:

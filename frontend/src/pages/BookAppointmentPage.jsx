@@ -19,6 +19,7 @@ const BookAppointmentPage = () => {
   const [selectedTimePeriod, setSelectedTimePeriod] = useState(''); // New state for time period filter
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(''); // Changed from error to message for consistency
+  const [selectedScheduleSlot, setSelectedScheduleSlot] = useState(null); // New state to hold selected slot for booking
 
   // Fetch all unique specialties from doctors
   const allSpecialties = [...new Set(doctors.map(doctor => doctor.specialty))];
@@ -84,16 +85,37 @@ const BookAppointmentPage = () => {
     }
   };
 
-  // Temporarily disable booking functionality
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setMessage('預約功能暫時禁用。');
+  const handleBookAppointment = async () => {
+    if (!selectedScheduleSlot) {
+      setMessage('請選擇一個班表時段進行預約。');
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const appointmentData = {
+        doctor_id: selectedScheduleSlot.doctor_id,
+        date: selectedScheduleSlot.date,
+        time_period: selectedScheduleSlot.time_period,
+      };
+      await api.post('/api/v1/patient/appointments', appointmentData);
+      setMessage('預約成功！');
+      setSelectedScheduleSlot(null); // Clear selection after successful booking
+      loadSchedules(); // Reload schedules to reflect the booking
+    } catch (error) {
+      console.error('預約失敗:', error);
+      setMessage(error.response?.data?.detail || '預約失敗，請稍後再試。');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="container">
       <div className="page-header">
-        <h1 className="page-title">線上掛號/查詢班表</h1>
+        <h1 className="page-title">線上掛號</h1>
         <p className="page-subtitle">選擇科別、醫師和時段進行預約</p>
       </div>
 
@@ -186,13 +208,17 @@ const BookAppointmentPage = () => {
                 return (
                   <div className="schedule-tile-content">
                     {daySchedules.map((schedule) => (
-                      <div key={schedule.schedule_id} className="schedule-entry">
+                      <div
+                        key={schedule.schedule_id}
+                        className={`schedule-entry ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''}`}
+                        onClick={() => setSelectedScheduleSlot(schedule)} // Select slot on click
+                      >
                         <span className="doctor-name">{schedule.doctor_name}</span>
                         <span className="specialty">({schedule.specialty})</span>
                         <span className="time-period">
                           ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label})
+                          - 已預約 {schedule.booked_patients} / 最多 {schedule.max_patients} 人
                         </span>
-                        {/* Booking button will be added later */}
                       </div>
                     ))}
                   </div>
@@ -204,15 +230,28 @@ const BookAppointmentPage = () => {
         )}
       </div>
 
-      {/* Booking form (temporarily disabled) */}
+      {/* Booking form - now enabled */}
       <div className="card">
-        <h3>預約掛號 (暫時禁用)</h3>
-        <form onSubmit={handleSubmit} className="book-form">
-          <p>預約功能將在後續版本中啟用。</p>
-          <button type="submit" className="btn btn-primary btn-block" disabled>
-            確認預約
-          </button>
-        </form>
+        <h3>確認預約</h3>
+        {selectedScheduleSlot ? (
+          <div className="booking-confirmation">
+            <p>您已選擇：</p>
+            <p>醫師: <strong>{selectedScheduleSlot.doctor_name}</strong> ({selectedScheduleSlot.specialty})</p>
+            <p>日期: <strong>{new Date(selectedScheduleSlot.date).toLocaleDateString('zh-TW')}</strong></p>
+            <p>時段: <strong>{TIME_PERIOD_OPTIONS.find(option => option.value === selectedScheduleSlot.time_period)?.label}</strong></p>
+            <p>預約人數: <strong>{selectedScheduleSlot.booked_patients} / {selectedScheduleSlot.max_patients}</strong></p>
+            <button
+              type="button"
+              className="btn btn-primary btn-block"
+              onClick={handleBookAppointment}
+              disabled={loading}
+            >
+              {loading ? '預約中...' : '確認預約'}
+            </button>
+          </div>
+        ) : (
+          <p>請從日曆中選擇一個可用的班表時段。</p>
+        )}
       </div>
     </div>
   );

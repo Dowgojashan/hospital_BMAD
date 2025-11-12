@@ -139,6 +139,7 @@ const DoctorSchedulesPage = () => {
                       <span className="specialty">({schedule.specialty})</span>
                       <span className="time-period">
                         ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label})
+                        - 已預約 {schedule.booked_patients} / 最多 {schedule.max_patients} 人
                       </span>
                     </div>
                   ))}

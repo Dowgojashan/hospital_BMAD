@@ -45,10 +45,11 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
 
 def verify_token(token: str) -> Dict[str, Any]:
     logger.info("verify_token: start")
+    logger.info(f"verify_token: Using SECRET_KEY: {SECRET_KEY}")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        logger.info("verify_token: end")
+        logger.info("verify_token: end - Token successfully decoded.")
         return payload
     except JWTError as e:
-        logger.info("verify_token: failed")
+        logger.error(f"verify_token: failed - JWTError: {e}")
         raise

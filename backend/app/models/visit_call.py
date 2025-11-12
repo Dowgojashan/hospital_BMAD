@@ -13,7 +13,7 @@ class VisitCall(Base):
     __tablename__ = "VISIT_CALL"
 
     call_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    appointment_id = Column(UUID(as_uuid=True), ForeignKey("APPOINTMENT.appointment_id"), nullable=True)
+    appointment_id = Column(UUID(as_uuid=True), ForeignKey("appointment.appointment_id"), nullable=True)
     ticket_sequence = Column(Integer, nullable=False)
     ticket_number = Column(String, nullable=True)
     called_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

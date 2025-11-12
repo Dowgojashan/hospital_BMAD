@@ -12,7 +12,7 @@ class Checkin(Base):
     __tablename__ = "CHECKIN"
 
     checkin_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    appointment_id = Column(UUID(as_uuid=True), ForeignKey("APPOINTMENT.appointment_id"), nullable=True)
+    appointment_id = Column(UUID(as_uuid=True), ForeignKey("appointment.appointment_id"), nullable=True)
     patient_id = Column(UUID(as_uuid=True), ForeignKey("PATIENT.patient_id"), nullable=False)
     checkin_time = Column(DateTime(timezone=True), nullable=True)
     checkin_method = Column(Enum(*checkin_method_enum, name="checkin_method"), nullable=True)
