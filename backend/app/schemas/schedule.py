@@ -1,14 +1,15 @@
-from pydantic import BaseModel, ConfigDict
-from datetime import date, time, datetime
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from datetime import date, datetime
 import uuid
-from typing import Optional
+from typing import Optional, Literal # Import Literal
 
+# Define the allowed time periods
+TIME_PERIOD_ENUM = Literal["morning", "afternoon", "night"]
 
 class ScheduleBase(BaseModel):
     doctor_id: uuid.UUID
     date: date
-    start: time
-    end: time
+    time_period: TIME_PERIOD_ENUM # Use the Literal type for validation
 
 
 class ScheduleCreate(ScheduleBase):
@@ -18,8 +19,7 @@ class ScheduleCreate(ScheduleBase):
 class ScheduleUpdate(BaseModel):
     doctor_id: Optional[uuid.UUID] = None
     date: Optional[date] = None
-    start: Optional[time] = None
-    end: Optional[time] = None
+    time_period: Optional[TIME_PERIOD_ENUM] = None # Use the Literal type for validation
 
 
 class SchedulePublic(ScheduleBase):

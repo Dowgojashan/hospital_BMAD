@@ -12,9 +12,14 @@ export default function ProtectedAdminRoute({ children }) {
   }
 
   const decoded = decodeToken(token);
-  if (!decoded || decoded.role !== 'admin') {
-    // Token invalid or user is not an admin, redirect to login
-    // Optionally, you could redirect to an unauthorized page or show an error
+  const isTokenExpired = decoded ? decoded.exp * 1000 < Date.now() : true;
+
+  if (!decoded || isTokenExpired || decoded.role !== 'admin') {
+    if (isTokenExpired) {
+      // Clear the expired token
+      useAuthStore.getState().clearToken();
+    }
+    // Token invalid, expired, or user is not an admin, redirect to login
     return <Navigate to="/login" replace />;
   }
 

@@ -10,6 +10,14 @@ import React, { useState, useEffect } from 'react';
 // import { mockSchedules, mockDoctors } from '../../utils/mockData'; // To be copied or created
 import './AdminScheduleManagementPage.css';
 import api from '../api/axios'; // Use existing axios instance
+import Calendar from 'react-calendar'; // Import react-calendar
+import 'react-calendar/dist/Calendar.css'; // Import react-calendar CSS
+
+const TIME_PERIOD_OPTIONS = [
+  { value: "morning", label: "上午診" },
+  { value: "afternoon", label: "下午診" },
+  { value: "night", label: "夜間診" },
+];
 
 const AdminScheduleManagementPage = () => {
   const [schedules, setSchedules] = useState([]);
@@ -19,9 +27,11 @@ const AdminScheduleManagementPage = () => {
   const [formData, setFormData] = useState({
     doctor_id: '',
     date: '',
-    start: '',
-    end: '',
+    time_period: '', // Changed from start/end to time_period
   });
+  const [selectedSpecialty, setSelectedSpecialty] = useState(''); // New state for selected specialty
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState(''); // New state for time period filter
+  const [calendarDate, setCalendarDate] = useState(new Date()); // State for the current month in the calendar
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(''); // For displaying messages to the user
 
@@ -33,13 +43,40 @@ const AdminScheduleManagementPage = () => {
     if (doctors.length > 0) {
       loadSchedules();
     }
-  }, [doctors]);
+  }, [doctors, calendarDate, selectedSpecialty, selectedTimePeriod]); // Added dependencies
 
   const loadSchedules = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/api/v1/schedules/');
-      const fetchedSchedules = response.data;
+      const params = {
+        month: calendarDate.getMonth() + 1, // getMonth() is 0-indexed
+        year: calendarDate.getFullYear(),
+      };
+
+      if (selectedSpecialty) {
+        // Collect all doctor_ids for the selected specialty
+        const doctorIdsInSpecialty = doctors
+          .filter((doc) => doc.specialty === selectedSpecialty)
+          .map((doc) => doc.id);
+
+        if (doctorIdsInSpecialty.length > 0) {
+          // Pass the list of doctor_ids to the backend as a comma-separated string
+          params.doctor_ids = doctorIdsInSpecialty.join(',');
+        } else {
+          // If no doctors in selected specialty, no schedules to fetch
+          setSchedules([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (selectedTimePeriod) {
+        params.time_period = selectedTimePeriod;
+      }
+
+      const response = await api.get('/api/v1/schedules/', { params });
+      // No frontend filtering by specialty needed anymore as backend handles it
+      let fetchedSchedules = response.data;
 
       // Enrich schedules with doctor names and specialties
       const enrichedSchedules = fetchedSchedules.map(schedule => {
@@ -82,24 +119,8 @@ const AdminScheduleManagementPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (new Date(formData.date) < new Date()) {
+    if (!editingSchedule && new Date(formData.date) < new Date()) {
       setMessage('日期不能是過去的日期。');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.start >= formData.end) {
-      setMessage('開始時間必須早於結束時間。');
-      setLoading(false);
-      return;
-    }
-
-    // Validate minutes for start and end times
-    const startMinutes = parseInt(formData.start.split(':')[1]);
-    const endMinutes = parseInt(formData.end.split(':')[1]);
-
-    if ((startMinutes !== 0 && startMinutes !== 30) || (endMinutes !== 0 && endMinutes !== 30)) {
-      setMessage('時間只能選擇整點或30分。');
       setLoading(false);
       return;
     }
@@ -116,11 +137,21 @@ const AdminScheduleManagementPage = () => {
       }
       setShowForm(false);
       setEditingSchedule(null);
-      setFormData({ doctor_id: '', date: '', start: '', end: '' });
+      setFormData({ doctor_id: '', date: '', time_period: '' }); // Reset formData
       loadSchedules();
     } catch (error) {
       console.error('操作失敗:', error);
-      const errorMessage = error.response?.data?.detail || '操作失敗，請稍後再試。';
+      let errorMessage = '操作失敗，請稍後再試。';
+      if (error.response?.data?.detail) {
+        const errorDetail = error.response.data.detail;
+        if (Array.isArray(errorDetail)) {
+          errorMessage = errorDetail
+            .map(err => `${err.loc.join(' -> ')}: ${err.msg}`)
+            .join('; ');
+        } else {
+          errorMessage = errorDetail;
+        }
+      }
       setMessage(errorMessage);
     } finally {
       setLoading(false);
@@ -132,9 +163,15 @@ const AdminScheduleManagementPage = () => {
     setFormData({
       doctor_id: schedule.doctor_id,
       date: schedule.date,
-      start: schedule.start,
-      end: schedule.end,
+      time_period: schedule.time_period, // Use time_period
     });
+    // Find the doctor to set the specialty
+    const doctor = doctors.find(doc => doc.id === schedule.doctor_id);
+    if (doctor) {
+      setSelectedSpecialty(doctor.specialty);
+    } else {
+      setSelectedSpecialty(''); // Reset if doctor not found
+    }
     setShowForm(true);
   };
 
@@ -164,17 +201,46 @@ const AdminScheduleManagementPage = () => {
           onClick={() => {
             setShowForm(true);
             setEditingSchedule(null);
-            setFormData({ doctor_id: '', date: '', start: '', end: '' });
+            setFormData({ doctor_id: '', date: '', time_period: '' }); // Reset formData
+            setSelectedSpecialty(''); // Reset selected specialty
           }}
         >
           新增班表
         </button>
       </div>
 
+      {message && (
+        <div className={`alert ${message.includes('成功') ? 'alert-success' : 'alert-danger'}`}>
+          {message}
+        </div>
+      )}
+
       {showForm && (
         <div className="card">
           <h3>{editingSchedule ? '編輯班表' : '新增班表'}</h3>
           <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">科別</label>
+              <select
+                className="form-select"
+                value={selectedSpecialty}
+                onChange={(e) => {
+                  setSelectedSpecialty(e.target.value);
+                  setFormData({ ...formData, doctor_id: '' }); // Reset doctor_id when specialty changes
+                }}
+                required
+              >
+                <option value="">請選擇科別</option>
+                {[...new Set(doctors.map(doctor => doctor.specialty))].map(
+                  (specialty) => (
+                    <option key={specialty} value={specialty}>
+                      {specialty}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
             <div className="form-group">
               <label className="form-label">醫師</label>
               <select
@@ -184,13 +250,16 @@ const AdminScheduleManagementPage = () => {
                   setFormData({ ...formData, doctor_id: e.target.value })
                 }
                 required
+                disabled={!selectedSpecialty} // Disable doctor selection until specialty is chosen
               >
                 <option value="">請選擇醫師</option>
-                {doctors.map((doctor) => (
-                  <option key={doctor.id} value={doctor.id}>
-                    {doctor.name} - {doctor.specialty}
-                  </option>
-                ))}
+                {doctors
+                  .filter(doctor => doctor.specialty === selectedSpecialty)
+                  .map((doctor) => (
+                      <option key={doctor.id} value={doctor.id}>
+                        {doctor.name}
+                      </option>
+                    ))}
               </select>
             </div>
 
@@ -204,33 +273,27 @@ const AdminScheduleManagementPage = () => {
                   setFormData({ ...formData, date: e.target.value })
                 }
                 required
+                disabled={!!editingSchedule} // Disable date input when editing
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">開始時間</label>
-              <input
-                type="time"
-                className="form-control"
-                value={formData.start}
+              <label className="form-label">時段</label>
+              <select
+                className="form-select"
+                value={formData.time_period}
                 onChange={(e) =>
-                  setFormData({ ...formData, start: e.target.value })
+                  setFormData({ ...formData, time_period: e.target.value })
                 }
                 required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">結束時間</label>
-              <input
-                type="time"
-                className="form-control"
-                value={formData.end}
-                onChange={(e) =>
-                  setFormData({ ...formData, end: e.target.value })
-                }
-                required
-              />
+              >
+                <option value="">請選擇時段</option>
+                {TIME_PERIOD_OPTIONS.map((period) => (
+                  <option key={period.value} value={period.value}>
+                    {period.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="form-actions">
@@ -257,45 +320,82 @@ const AdminScheduleManagementPage = () => {
       )}
 
       <div className="card">
-        <h3>班表列表</h3>
-        <div className="schedules-table">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>醫師</th>
-                <th>科別</th>
-                <th>日期</th>
-                <th>時段</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {schedules.map((schedule) => (
-                <tr key={schedule.schedule_id}>
-                  <td>{schedule.doctor_name || '醫師'}</td>
-                  <td>{schedule.specialty}</td>
-                  <td>{new Date(schedule.date).toLocaleDateString('zh-TW')}</td>
-                  <td>{schedule.start} - {schedule.end}</td>
-                  <td>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => handleEdit(schedule)}
-                      style={{ marginRight: '8px' }}
-                    >
-                      編輯
-                    </button>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDelete(schedule.schedule_id)}
-                    >
-                      刪除
-                    </button>
-                  </td>
-                </tr>
+        <h3>班表篩選</h3>
+        <div className="filter-controls">
+          <div className="form-group">
+            <label className="form-label">科別篩選</label>
+            <select
+              className="form-select"
+              value={selectedSpecialty}
+              onChange={(e) => setSelectedSpecialty(e.target.value)}
+            >
+              <option value="">請選擇科別</option>
+              {[...new Set(doctors.map(doctor => doctor.specialty))].map(
+                (specialty) => (
+                  <option key={specialty} value={specialty}>
+                    {specialty}
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">時段篩選</label>
+            <select
+              className="form-select"
+              value={selectedTimePeriod}
+              onChange={(e) => setSelectedTimePeriod(e.target.value)}
+            >
+              <option value="">請選擇時段</option>
+              {TIME_PERIOD_OPTIONS.map((period) => (
+                <option key={period.value} value={period.value}>
+                  {period.label}
+                </option>
               ))}
-            </tbody>
-          </table>
+            </select>
+          </div>
         </div>
+      </div>
+
+      <div className="card">
+        <h3>班表日曆</h3>
+        <Calendar
+          onChange={setCalendarDate}
+          value={calendarDate}
+          minDate={new Date()}
+          maxDate={new Date(new Date().setMonth(new Date().getMonth() + 3))}
+          locale="zh-TW"
+          className="react-calendar-custom"
+          tileContent={({ date, view }) => {
+            if (view === 'month') {
+              const daySchedules = schedules.filter(
+                (schedule) =>
+                  new Date(schedule.date).toDateString() === date.toDateString()
+              );
+
+              if (daySchedules.length === 0) return null;
+
+              return (
+                <div className="schedule-tile-content">
+                  {daySchedules.map((schedule) => (
+                    <div key={schedule.schedule_id} className="schedule-entry">
+                      <span className="doctor-name">{schedule.doctor_name}</span>
+                      <span className="time-period">
+                        ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label})
+                      </span>
+                      <div className="schedule-actions">
+                        <button onClick={() => handleEdit(schedule)} className="btn-edit">編輯</button>
+                        <button onClick={() => handleDelete(schedule.schedule_id)} className="btn-delete">刪除</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return null;
+          }}
+        />
       </div>
     </div>
   );
