@@ -8,7 +8,7 @@ import logging # Import logging
 from app.db.session import get_db
 from app.models.admin import Admin
 from app.crud import crud_schedule
-from app.schemas.schedule import ScheduleCreate, ScheduleUpdate, SchedulePublic
+from app.schemas.schedule import ScheduleCreate, ScheduleUpdate, SchedulePublic, ScheduleRecurringCreate
 from app.api.routers.admin_management import get_current_active_admin
 
 router = APIRouter()
@@ -28,6 +28,23 @@ def create_schedule_endpoint(
         return crud_schedule.create_schedule(db=db, schedule_in=schedule_in)
     except HTTPException as e:
         logger.error(f"Error creating schedule: {e.detail}")
+        raise e
+
+
+@router.post("/recurring", response_model=List[SchedulePublic], status_code=status.HTTP_201_CREATED)
+def create_recurring_schedules_endpoint(
+    schedule_in: ScheduleRecurringCreate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    """
+    Create recurring schedules based on a pattern.
+    """
+    try:
+        return crud_schedule.create_recurring_schedules(db=db, schedule_in=schedule_in)
+    except HTTPException as e:
+        # Log the error with more context if possible
+        logger.error(f"Error creating recurring schedules: {e.detail}")
         raise e
 
 
@@ -70,6 +87,7 @@ def get_schedule_endpoint(
 def update_schedule_endpoint(
     schedule_id: uuid.UUID,
     schedule_in: ScheduleUpdate,
+    new_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
@@ -77,12 +95,33 @@ def update_schedule_endpoint(
     Update a schedule. Only accessible by administrators.
     """
     try:
-        db_schedule = crud_schedule.update_schedule(db=db, schedule_id=schedule_id, schedule_in=schedule_in)
+        db_schedule = crud_schedule.update_schedule(db=db, schedule_id=schedule_id, schedule_in=schedule_in, new_date=new_date)
         if not db_schedule:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
         return db_schedule
     except HTTPException as e:
         logger.error(f"Error updating schedule {schedule_id}: {e.detail}")
+        raise e
+
+
+@router.put("/recurring/{recurring_group_id}", response_model=List[SchedulePublic])
+def update_recurring_schedules_endpoint(
+    recurring_group_id: uuid.UUID,
+    schedule_in: ScheduleRecurringCreate,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    """
+    Update a recurring schedule.
+    This will delete all future instances from the start_date provided in the body
+    and create new ones based on the new recurring pattern.
+    """
+    try:
+        return crud_schedule.update_recurring_schedules(
+            db=db, recurring_group_id=recurring_group_id, schedule_in=schedule_in
+        )
+    except HTTPException as e:
+        logger.error(f"Error updating recurring schedules for group {recurring_group_id}: {e.detail}")
         raise e
 
 
@@ -99,3 +138,22 @@ def delete_schedule_endpoint(
     if not db_schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
     return
+
+
+@router.delete("/recurring/{recurring_group_id}", status_code=status.HTTP_200_OK)
+def delete_recurring_schedules_endpoint(
+    recurring_group_id: uuid.UUID,
+    start_date: date,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    """
+    Delete all schedules in a recurring group on or after a specified start date.
+    """
+    deleted_count = crud_schedule.delete_recurring_schedules(
+        db=db, recurring_group_id=recurring_group_id, start_date=start_date
+    )
+    if deleted_count == 0:
+        # This isn't an error, but good to know. We can return 200 OK with a message.
+        return {"message": "No future recurring schedules found to delete."}
+    return {"message": f"Successfully deleted {deleted_count} future recurring schedules."}

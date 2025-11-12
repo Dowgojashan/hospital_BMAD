@@ -27,13 +27,18 @@ const AdminScheduleManagementPage = () => {
   const [formData, setFormData] = useState({
     doctor_id: '',
     date: '',
-    time_period: '', // Changed from start/end to time_period
+    time_period: '',
   });
-  const [selectedSpecialty, setSelectedSpecialty] = useState(''); // New state for selected specialty
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState(''); // New state for time period filter
-  const [calendarDate, setCalendarDate] = useState(new Date()); // State for the current month in the calendar
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringDayOfWeek, setRecurringDayOfWeek] = useState('0');
+  const [recurringMonths, setRecurringMonths] = useState('1');
+  const [editMode, setEditMode] = useState('single'); // 'single' or 'future'
+
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState('');
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(''); // For displaying messages to the user
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     loadDoctors();
@@ -43,43 +48,32 @@ const AdminScheduleManagementPage = () => {
     if (doctors.length > 0) {
       loadSchedules();
     }
-  }, [doctors, calendarDate, selectedSpecialty, selectedTimePeriod]); // Added dependencies
+  }, [doctors, calendarDate, selectedSpecialty, selectedTimePeriod]);
 
   const loadSchedules = async () => {
     setLoading(true);
     try {
       const params = {
-        month: calendarDate.getMonth() + 1, // getMonth() is 0-indexed
+        month: calendarDate.getMonth() + 1,
         year: calendarDate.getFullYear(),
       };
-
       if (selectedSpecialty) {
-        // Collect all doctor_ids for the selected specialty
         const doctorIdsInSpecialty = doctors
           .filter((doc) => doc.specialty === selectedSpecialty)
           .map((doc) => doc.id);
-
         if (doctorIdsInSpecialty.length > 0) {
-          // Pass the list of doctor_ids to the backend as a comma-separated string
           params.doctor_ids = doctorIdsInSpecialty.join(',');
         } else {
-          // If no doctors in selected specialty, no schedules to fetch
           setSchedules([]);
           setLoading(false);
           return;
         }
       }
-
       if (selectedTimePeriod) {
         params.time_period = selectedTimePeriod;
       }
-
       const response = await api.get('/api/v1/schedules/', { params });
-      // No frontend filtering by specialty needed anymore as backend handles it
-      let fetchedSchedules = response.data;
-
-      // Enrich schedules with doctor names and specialties
-      const enrichedSchedules = fetchedSchedules.map(schedule => {
+      const enrichedSchedules = response.data.map(schedule => {
         const doctor = doctors.find(doc => doc.id === schedule.doctor_id);
         return {
           ...schedule,
@@ -100,7 +94,6 @@ const AdminScheduleManagementPage = () => {
     setLoading(true);
     try {
       const response = await api.get('/api/v1/doctors/');
-      // Assuming the doctor objects from /api/v1/doctors/ have doctor_id, name, specialty
       const fetchedDoctors = response.data.map(doctor => ({
         id: doctor.doctor_id,
         name: doctor.name,
@@ -125,19 +118,51 @@ const AdminScheduleManagementPage = () => {
       return;
     }
 
-    console.log('Submitting formData:', formData); // Debugging line
-
     try {
       if (editingSchedule) {
-        await api.put(`/api/v1/schedules/${editingSchedule.schedule_id}`, formData);
-        setMessage('班表更新成功！');
+        if (editMode === 'future') {
+          // Handle recurring update
+          const recurringUpdateData = {
+            doctor_id: formData.doctor_id,
+            time_period: formData.time_period,
+            start_date: editingSchedule.date, // The start date is the date of the item being edited
+            day_of_week: parseInt(recurringDayOfWeek, 10),
+            months_to_create: parseInt(recurringMonths, 10),
+          };
+          await api.put(`/api/v1/schedules/recurring/${editingSchedule.recurring_group_id}`, recurringUpdateData);
+          setMessage('週期性班表更新成功！');
+        } else {
+          // Handle single update, and "break" the link if it was recurring
+          const { date, ...restOfData } = formData;
+          const updatePayload = {
+            ...restOfData,
+            recurring_group_id: null, // Break the link to the recurring group
+          };
+          await api.put(`/api/v1/schedules/${editingSchedule.schedule_id}`, updatePayload, {
+            params: { new_date: date }
+          });
+          setMessage('班表更新成功！');
+        }
+      } else if (isRecurring) {
+        // Handle recurring creation
+        const recurringData = {
+          doctor_id: formData.doctor_id,
+          time_period: formData.time_period,
+          start_date: formData.date,
+          day_of_week: parseInt(recurringDayOfWeek, 10),
+          months_to_create: parseInt(recurringMonths, 10),
+        };
+        await api.post('/api/v1/schedules/recurring', recurringData);
+        setMessage('週期性班表新增成功！');
       } else {
+        // Handle single creation
         await api.post('/api/v1/schedules/', formData);
         setMessage('班表新增成功！');
       }
       setShowForm(false);
       setEditingSchedule(null);
-      setFormData({ doctor_id: '', date: '', time_period: '' }); // Reset formData
+      setFormData({ doctor_id: '', date: '', time_period: '' });
+      setIsRecurring(false);
       loadSchedules();
     } catch (error) {
       console.error('操作失敗:', error);
@@ -145,9 +170,7 @@ const AdminScheduleManagementPage = () => {
       if (error.response?.data?.detail) {
         const errorDetail = error.response.data.detail;
         if (Array.isArray(errorDetail)) {
-          errorMessage = errorDetail
-            .map(err => `${err.loc.join(' -> ')}: ${err.msg}`)
-            .join('; ');
+          errorMessage = errorDetail.map(err => `${err.loc.join(' -> ')}: ${err.msg}`).join('; ');
         } else {
           errorMessage = errorDetail;
         }
@@ -159,35 +182,96 @@ const AdminScheduleManagementPage = () => {
   };
 
   const handleEdit = (schedule) => {
-    setEditingSchedule(schedule);
-    setFormData({
-      doctor_id: schedule.doctor_id,
-      date: schedule.date,
-      time_period: schedule.time_period, // Use time_period
-    });
-    // Find the doctor to set the specialty
+    if (schedule.recurring_group_id) {
+      const userChoice = window.confirm(
+        '這是一個週期性班表項目。\n點擊「確定」以編輯未來所有相關班表。\n點擊「取消」以僅編輯此單筆班表。'
+      );
+      if (userChoice) {
+        // Edit this and all future recurring schedules
+        setEditMode('future');
+        setEditingSchedule(schedule);
+        setIsRecurring(true);
+        setFormData({
+          doctor_id: schedule.doctor_id,
+          date: schedule.date, // This will be the start date, but disabled
+          time_period: schedule.time_period,
+        });
+        // Pre-fill recurring options based on the schedule's day
+        const scheduleDate = new Date(schedule.date);
+        // Adjust for timezone offset before getting the day
+        const dayOfWeek = (scheduleDate.getUTCDay() + 6) % 7; // Convert Sunday=0 to Monday=0
+        setRecurringDayOfWeek(String(dayOfWeek));
+        setRecurringMonths('1'); // Default to 1 month for the new pattern
+      } else {
+        // Edit only the single schedule instance
+        setEditMode('single');
+        setEditingSchedule(schedule);
+        setIsRecurring(false);
+        setFormData({
+          doctor_id: schedule.doctor_id,
+          date: schedule.date,
+          time_period: schedule.time_period,
+        });
+      }
+    } else {
+      // Standard non-recurring schedule edit
+      setEditMode('single');
+      setEditingSchedule(schedule);
+      setIsRecurring(false);
+      setFormData({
+        doctor_id: schedule.doctor_id,
+        date: schedule.date,
+        time_period: schedule.time_period,
+      });
+    }
+
     const doctor = doctors.find(doc => doc.id === schedule.doctor_id);
     if (doctor) {
       setSelectedSpecialty(doctor.specialty);
     } else {
-      setSelectedSpecialty(''); // Reset if doctor not found
+      setSelectedSpecialty('');
     }
     setShowForm(true);
   };
 
-  const handleDelete = async (scheduleId) => {
-    if (!window.confirm('確定要刪除此班表嗎？')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/api/v1/schedules/${scheduleId}`);
-      setMessage('刪除成功！');
-      loadSchedules();
-    } catch (error) {
-      console.error('刪除失敗:', error);
-      const errorMessage = error.response?.data?.detail || '刪除失敗，請稍後再試。';
-      setMessage(errorMessage);
+  const handleDelete = async (schedule) => {
+    if (schedule.recurring_group_id) {
+      const userChoice = window.confirm(
+        '這是一個週期性班表項目。\n點擊「確定」以刪除未來所有相關班表。\n點擊「取消」以僅刪除此單筆班表。'
+      );
+      if (userChoice) {
+        if (!window.confirm(`確定要從 ${schedule.date} 開始，刪除未來所有的相關班表嗎？`)) return;
+        try {
+          await api.delete(`/api/v1/schedules/recurring/${schedule.recurring_group_id}`, {
+            params: { start_date: schedule.date }
+          });
+          setMessage('未來所有週期性班表已刪除！');
+          loadSchedules();
+        } catch (error) {
+          console.error('週期性刪除失敗:', error);
+          setMessage(error.response?.data?.detail || '週期性刪除失敗，請稍後再試。');
+        }
+      } else {
+        if (!window.confirm(`確定要刪除 ${schedule.date} 這筆班表嗎？`)) return;
+        try {
+          await api.delete(`/api/v1/schedules/${schedule.schedule_id}`);
+          setMessage('單筆班表刪除成功！');
+          loadSchedules();
+        } catch (error) {
+          console.error('單筆刪除失敗:', error);
+          setMessage(error.response?.data?.detail || '刪除失敗，請稍後再試。');
+        }
+      }
+    } else {
+      if (!window.confirm('確定要刪除此班表嗎？')) return;
+      try {
+        await api.delete(`/api/v1/schedules/${schedule.schedule_id}`);
+        setMessage('刪除成功！');
+        loadSchedules();
+      } catch (error) {
+        console.error('刪除失敗:', error);
+        setMessage(error.response?.data?.detail || '刪除失敗，請稍後再試。');
+      }
     }
   };
 
@@ -201,8 +285,12 @@ const AdminScheduleManagementPage = () => {
           onClick={() => {
             setShowForm(true);
             setEditingSchedule(null);
-            setFormData({ doctor_id: '', date: '', time_period: '' }); // Reset formData
-            setSelectedSpecialty(''); // Reset selected specialty
+            setFormData({ doctor_id: '', date: '', time_period: '' });
+            setSelectedSpecialty('');
+            setIsRecurring(false);
+            setRecurringDayOfWeek('0');
+            setRecurringMonths('1');
+            setEditMode('single');
           }}
         >
           新增班表
@@ -219,6 +307,24 @@ const AdminScheduleManagementPage = () => {
         <div className="card">
           <h3>{editingSchedule ? '編輯班表' : '新增班表'}</h3>
           <form onSubmit={handleSubmit}>
+            {/* Recurring Schedule Toggle */}
+            {(isRecurring || !editingSchedule) && (
+              <div className="form-group form-check d-flex align-items-center mb-3">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="isRecurringCheck"
+                  checked={isRecurring}
+                  onChange={(e) => setIsRecurring(e.target.checked)}
+                  disabled={!!editingSchedule}
+                />
+                <label className="form-check-label ms-2" htmlFor="isRecurringCheck">
+                  週期性排班
+                </label>
+              </div>
+            )}
+
+            {/* Doctor and Specialty Fields */}
             <div className="form-group">
               <label className="form-label">科別</label>
               <select
@@ -226,7 +332,7 @@ const AdminScheduleManagementPage = () => {
                 value={selectedSpecialty}
                 onChange={(e) => {
                   setSelectedSpecialty(e.target.value);
-                  setFormData({ ...formData, doctor_id: '' }); // Reset doctor_id when specialty changes
+                  setFormData({ ...formData, doctor_id: '' });
                 }}
                 required
               >
@@ -250,7 +356,7 @@ const AdminScheduleManagementPage = () => {
                   setFormData({ ...formData, doctor_id: e.target.value })
                 }
                 required
-                disabled={!selectedSpecialty} // Disable doctor selection until specialty is chosen
+                disabled={!selectedSpecialty}
               >
                 <option value="">請選擇醫師</option>
                 {doctors
@@ -263,8 +369,9 @@ const AdminScheduleManagementPage = () => {
               </select>
             </div>
 
+            {/* Date and Recurring Fields */}
             <div className="form-group">
-              <label className="form-label">日期</label>
+              <label className="form-label">{(isRecurring || editMode === 'future') ? '開始日期' : '日期'}</label>
               <input
                 type="date"
                 className="form-control"
@@ -273,9 +380,44 @@ const AdminScheduleManagementPage = () => {
                   setFormData({ ...formData, date: e.target.value })
                 }
                 required
-                disabled={!!editingSchedule} // Disable date input when editing
+                disabled={editingSchedule && editMode === 'future'}
               />
             </div>
+
+            {(isRecurring || editMode === 'future') && (
+              <>
+                <div className="form-group">
+                  <label className="form-label">重複星期</label>
+                  <select
+                    className="form-select"
+                    value={recurringDayOfWeek}
+                    onChange={(e) => setRecurringDayOfWeek(e.target.value)}
+                    required={isRecurring}
+                  >
+                    <option value="0">每週一</option>
+                    <option value="1">每週二</option>
+                    <option value="2">每週三</option>
+                    <option value="3">每週四</option>
+                    <option value="4">每週五</option>
+                    <option value="5">每週六</option>
+                    <option value="6">每週日</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">重複期間</label>
+                  <select
+                    className="form-select"
+                    value={recurringMonths}
+                    onChange={(e) => setRecurringMonths(e.target.value)}
+                    required={isRecurring}
+                  >
+                    <option value="1">一個月</option>
+                    <option value="2">兩個月</option>
+                    <option value="3">三個月</option>
+                  </select>
+                </div>
+              </>
+            )}
 
             <div className="form-group">
               <label className="form-label">時段</label>
@@ -310,6 +452,7 @@ const AdminScheduleManagementPage = () => {
                 onClick={() => {
                   setShowForm(false);
                   setEditingSchedule(null);
+                  setIsRecurring(false);
                 }}
               >
                 取消
@@ -363,6 +506,7 @@ const AdminScheduleManagementPage = () => {
         <Calendar
           onChange={setCalendarDate}
           value={calendarDate}
+          onActiveStartDateChange={({ activeStartDate }) => setCalendarDate(activeStartDate)}
           minDate={new Date()}
           maxDate={new Date(new Date().setMonth(new Date().getMonth() + 3))}
           locale="zh-TW"
@@ -386,7 +530,7 @@ const AdminScheduleManagementPage = () => {
                       </span>
                       <div className="schedule-actions">
                         <button onClick={() => handleEdit(schedule)} className="btn-edit">編輯</button>
-                        <button onClick={() => handleDelete(schedule.schedule_id)} className="btn-delete">刪除</button>
+                        <button onClick={() => handleDelete(schedule)} className="btn-delete">刪除</button>
                       </div>
                     </div>
                   ))}

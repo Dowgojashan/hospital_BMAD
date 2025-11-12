@@ -10,6 +10,7 @@ class Schedule(Base):
 
     schedule_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     doctor_id = Column(UUID(as_uuid=True), ForeignKey("DOCTOR.doctor_id"), nullable=False)
+    recurring_group_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     date = Column(Date, nullable=False)
     time_period = Column(String, nullable=False) # New time_period column
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
