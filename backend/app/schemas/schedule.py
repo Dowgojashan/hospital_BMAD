@@ -30,6 +30,10 @@ class SchedulePublic(ScheduleBase):
     recurring_group_id: Optional[uuid.UUID] = None
     created_at: datetime
 
+class ScheduleDoctorPublic(SchedulePublic):
+    doctor_name: str
+    specialty: str
+
 
 class ScheduleRecurringCreate(BaseModel):
     doctor_id: uuid.UUID

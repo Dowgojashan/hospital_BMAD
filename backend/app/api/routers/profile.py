@@ -34,10 +34,11 @@ def read_current_user_profile(
 ):
     user, role = current_user_with_role
     print(f"read_current_user_profile: User: {user.name}, Role: {role}") # Debug print
-    if role == "admin":
-        return AdminProfileResponse.model_validate(user)
-    elif role == "doctor":
+    if role == "doctor":
+        print(f"Debug: Doctor ORM object attributes - name: {user.name}, email: {user.email}, specialty: {user.specialty}, login_id: {user.doctor_login_id}")
         return DoctorProfileResponse.model_validate(user)
+    elif role == "admin":
+        return AdminProfileResponse.model_validate(user)
     elif role == "patient":
         return PatientProfileResponse.model_validate(user)
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown user role")

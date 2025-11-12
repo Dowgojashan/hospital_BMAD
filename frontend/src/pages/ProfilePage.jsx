@@ -36,13 +36,11 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false); // New state for edit mode
 
   const fetchProfile = async () => {
-    console.log('User from auth store:', user); // Debugging line
-    if (user && user.sub && user.role) { // Changed user.id to user.sub
+    if (user && user.id && user.role) { // Changed user.sub to user.id as per authStore fix
       setLoading(true);
-              try {
-                const response = await api.get('/api/v1/profile/me');
-                const profileData = response.data;
-                console.log('profileData:', profileData); // Add this line for debugging
+      try {
+        const response = await api.get('/api/v1/profile/me');
+        const profileData = response.data;
         setFormData({
           name: profileData.name || '',
           email: profileData.email || '',
@@ -50,9 +48,9 @@ const ProfilePage = () => {
           dob: profileData.dob || '',
           card_number: profileData.card_number || '',
           specialty: profileData.specialty || '',
-          login_id: profileData.account_username || profileData.doctor_login_id || '', // Populate login_id
-          password: '', // Always reset password fields
-          confirmPassword: '', // Always reset password fields
+          login_id: profileData.account_username || profileData.doctor_login_id || '',
+          password: '',
+          confirmPassword: '',
         });
         setOriginalFormData({ // Store original data
           name: profileData.name || '',
@@ -67,28 +65,38 @@ const ProfilePage = () => {
       } catch (error) {
         console.error('Failed to fetch profile:', error);
         setMessage('載入個人資料失敗。');
+        if (error.response && error.response.data && error.response.data.detail) {
+          setMessage(`載入個人資料失敗: ${error.response.data.detail}`);
+        }
       } finally {
         setLoading(false);
       }
+    } else {
+      setLoading(false); // Ensure loading state is reset even if API call is skipped
+      setMessage('無法載入個人資料：用戶未登入或資訊不完整。');
     }
   };
 
   useEffect(() => {
-    fetchProfile();
-  }, [user]);
+    if (user && user.id) { // Only fetch if user.id is available
+      fetchProfile();
+    } else {
+      setLoading(false); // Ensure loading is false if no user to fetch profile for
+    }
+  }, [user]); // Dependency on user object
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
 
-    if (formData.password || formData.confirmPassword) { // Only validate if password fields are touched
+    if (formData.password || formData.confirmPassword) {
       if (formData.password !== formData.confirmPassword) {
         setMessage('密碼與確認密碼不符，請重新輸入。');
         setLoading(false);
         return;
       }
-      if (formData.password.length > 0 && formData.password.length < 6) { // Check length only if password is provided
+      if (formData.password.length > 0 && formData.password.length < 6) {
         setMessage('密碼長度不得少於6個字元。');
         setLoading(false);
         return;
@@ -133,8 +141,6 @@ const ProfilePage = () => {
           ...(formData.password && { password: formData.password }),
         };
       }
-      console.log('User object from store:', user);
-      console.log('Payload being sent:', payload);
 
       await api.put('/api/v1/profile/me', payload);
       setMessage('個人資料更新成功！');
@@ -152,8 +158,24 @@ const ProfilePage = () => {
     }
   };
 
-  if (!user) {
-    return null; // Or redirect to login if user is not available
+  if (loading) {
+    return (
+      <div className="container">
+        <div className="loading">載入中...</div>
+      </div>
+    );
+  }
+
+  if (!user || !user.id) { // Display message if user is not logged in or id is missing
+    return (
+      <div className="container">
+        <div className="card">
+          <p style={{ textAlign: 'center', color: '#dc3545' }}>
+            {message || '請先登入以查看您的個人資料。'}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

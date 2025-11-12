@@ -309,21 +309,20 @@ const AdminScheduleManagementPage = () => {
           <form onSubmit={handleSubmit}>
             {/* Recurring Schedule Toggle */}
             {(isRecurring || !editingSchedule) && (
-              <div className="form-group form-check d-flex align-items-center mb-3">
+              <div className="form-group form-check recurring-checkbox-row mb-3">
+                <label className="form-check-label" htmlFor="isRecurringCheck">
+                  週期性排班
+                </label>
                 <input
                   type="checkbox"
-                  className="form-check-input"
+                  className="form-check-input ms-2"
                   id="isRecurringCheck"
                   checked={isRecurring}
                   onChange={(e) => setIsRecurring(e.target.checked)}
                   disabled={!!editingSchedule}
                 />
-                <label className="form-check-label ms-2" htmlFor="isRecurringCheck">
-                  週期性排班
-                </label>
               </div>
             )}
-
             {/* Doctor and Specialty Fields */}
             <div className="form-group">
               <label className="form-label">科別</label>
@@ -409,7 +408,8 @@ const AdminScheduleManagementPage = () => {
                     className="form-select"
                     value={recurringMonths}
                     onChange={(e) => setRecurringMonths(e.target.value)}
-                    required={isRecurring}
+                    required={isRecurring && !editingSchedule}
+                    disabled={editingSchedule && editMode === 'future'}
                   >
                     <option value="1">一個月</option>
                     <option value="2">兩個月</option>

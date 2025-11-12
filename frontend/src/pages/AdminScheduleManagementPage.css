@@ -159,3 +159,30 @@
   min-width: 160px; /* 絕對寬度限制 */
   height: 135px;
 }
+
+/* Alignment for recurring schedule checkbox and label */
+.recurring-checkbox-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap; /* Prevent wrapping */
+  /* Ensure no extra margins interfere with alignment */
+}
+
+.recurring-checkbox-row .form-check-input {
+  margin-top: 0;
+  margin-bottom: 0;
+  vertical-align: middle; /* Explicitly align */
+}
+
+.recurring-checkbox-row .form-check-label {
+  margin-top: 0;
+  margin-bottom: 0;
+  vertical-align: middle; /* Explicitly align */
+  white-space: nowrap; /* Prevent text from wrapping */
+}
+
+/* Center the form within the card */
+.card form {
+  max-width: 500px; /* Adjust this value as needed */
+  margin: 0 auto;
+}

@@ -4,7 +4,16 @@ import { jwtDecode } from 'jwt-decode';
 // Helper function to decode token and get user info
 const getUserFromToken = (token) => {
   try {
-    return token ? jwtDecode(token) : null;
+    if (!token) return null;
+    const decoded = jwtDecode(token);
+    // Map 'sub' from JWT payload to 'id' for consistency with frontend usage
+    // Also include the 'role'
+    return {
+      id: decoded.sub,
+      role: decoded.role,
+      // Add other properties from decoded token if needed, e.g., name, email
+      // For now, we only need id and role for authentication checks
+    };
   } catch (error) {
     console.error("Error decoding token:", error);
     return null;
