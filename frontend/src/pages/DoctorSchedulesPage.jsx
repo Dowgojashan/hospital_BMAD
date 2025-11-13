@@ -33,6 +33,28 @@ const DoctorSchedulesPage = () => {
     }
   }, [user, calendarDate, selectedTimePeriod]);
 
+  const getScheduleStatusInfo = (schedule) => {
+    const isUnavailable = schedule.status !== 'available';
+    let label = `已預約 ${schedule.booked_patients} / 最多 ${schedule.max_patients} 人`;
+    if (isUnavailable) {
+      switch (schedule.status) {
+        case 'leave_approved':
+          label = '(已核准停診)';
+          break;
+        case 'leave_pending':
+          label = '(停診審核中)';
+          break;
+        case 'cancelled':
+          label = '(已取消)';
+          break;
+        default:
+          label = '(無法預約)';
+          break;
+      }
+    }
+    return { isUnavailable, label };
+  };
+
   const loadSchedules = async () => {
     setLoading(true);
     setMessage(''); // Clear previous messages
@@ -133,16 +155,18 @@ const DoctorSchedulesPage = () => {
 
               return (
                 <div className="schedule-tile-content">
-                  {daySchedules.map((schedule) => (
-                    <div key={schedule.schedule_id} className="schedule-entry">
-                      <span className="doctor-name">{schedule.doctor_name}</span>
-                      <span className="specialty">({schedule.specialty})</span>
-                      <span className="time-period">
-                        ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label})
-                        - 已預約 {schedule.booked_patients} / 最多 {schedule.max_patients} 人
-                      </span>
-                    </div>
-                  ))}
+                  {daySchedules.map((schedule) => {
+                    const { isUnavailable, label } = getScheduleStatusInfo(schedule);
+                    return (
+                      <div key={schedule.schedule_id} className={`schedule-entry ${isUnavailable ? 'unavailable' : ''}`}>
+                        <span className="doctor-name">{schedule.doctor_name}</span>
+                        <span className="specialty">({schedule.specialty})</span>
+                        <span className="time-period">
+                          ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label}) - {label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             }

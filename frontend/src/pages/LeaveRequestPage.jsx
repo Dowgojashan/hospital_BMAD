@@ -137,6 +137,28 @@ const LeaveRequestPage = () => {
     return option ? option.label : value;
   };
 
+  const getScheduleStatusInfo = (schedule) => {
+    const isUnavailable = schedule.status !== 'available';
+    let label = `(${schedule.booked_patients}/${schedule.max_patients})`;
+    if (isUnavailable) {
+      switch (schedule.status) {
+        case 'leave_approved':
+          label = '(已核准停診)';
+          break;
+        case 'leave_pending':
+          label = '(停診審核中)';
+          break;
+        case 'cancelled':
+          label = '(已取消)';
+          break;
+        default:
+          label = '(無法預約)';
+          break;
+      }
+    }
+    return { isUnavailable, label };
+  };
+
   return (
     <div className="container">
       <div className="page-header">
@@ -147,7 +169,7 @@ const LeaveRequestPage = () => {
       <div className="card">
         <div className="leave-type-toggle">
           <button className={`btn ${leaveType === 'single' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setLeaveType('single')}>單日停診</button>
-          <button className={`btn ${leaveType === 'range' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setLeaveType('range')}>連續停診</button>
+          <button className={`btn ${leaveType === 'range' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setLeaveType('range')}>連續停診 (全天)</button>
         </div>
       </div>
 
@@ -170,16 +192,19 @@ const LeaveRequestPage = () => {
                     if (daySchedules.length === 0) return null;
                     return (
                       <div className="schedule-tile-content">
-                        {daySchedules.map(schedule => (
-                          <div
-                            key={schedule.schedule_id}
-                            className={`schedule-entry ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''} ${schedule.max_patients === 0 ? 'unavailable' : ''}`}
-                            onClick={() => setSelectedScheduleSlot(schedule)}
-                          >
-                            <span className="time-period-label">{getTimePeriodLabel(schedule.time_period)}</span>
-                            <span className="status-label">{schedule.max_patients === 0 ? '(已停診)' : `(${schedule.booked_patients}/${schedule.max_patients})`}</span>
-                          </div>
-                        ))}
+                        {daySchedules.map(schedule => {
+                          const { isUnavailable, label } = getScheduleStatusInfo(schedule);
+                          return (
+                            <div
+                              key={schedule.schedule_id}
+                              className={`schedule-entry ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''} ${isUnavailable ? 'unavailable' : ''}`}
+                              onClick={() => !isUnavailable && setSelectedScheduleSlot(schedule)}
+                            >
+                              <span className="time-period-label">{getTimePeriodLabel(schedule.time_period)}</span>
+                              <span className="status-label">{label}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   }
@@ -205,7 +230,7 @@ const LeaveRequestPage = () => {
                 <label className="form-label">停診原因 *</label>
                 <textarea className="form-control" value={reason} onChange={(e) => setReason(e.target.value)} rows={5} required placeholder="請說明停診原因" disabled={!selectedScheduleSlot} />
               </div>
-              <button type="submit" className="btn btn-primary btn-block" disabled={loading || !selectedScheduleSlot || !reason.trim()}>
+              <button type="submit" className="btn btn-primary btn-block" disabled={loading || !selectedScheduleSlot}>
                 {loading ? '送出中...' : '送出單日停診申請'}
               </button>
             </form>
@@ -215,7 +240,7 @@ const LeaveRequestPage = () => {
         // Multi-Day Leave UI
         <div id="multi-day-leave">
           <div className="card">
-            <h3>連續停診申請</h3>
+            <h3>連續停診申請 (全天)</h3>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">選擇日期範圍</label>
@@ -229,7 +254,7 @@ const LeaveRequestPage = () => {
                 <label className="form-label">停診原因 *</label>
                 <textarea className="form-control" value={reason} onChange={(e) => setReason(e.target.value)} rows={5} required placeholder="請說明停診原因" />
               </div>
-              <button type="submit" className="btn btn-primary btn-block" disabled={loading || !reason.trim()}>
+              <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
                 {loading ? '送出中...' : '送出連續停診申請'}
               </button>
             </form>

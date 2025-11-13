@@ -13,6 +13,7 @@ class Schedule(Base):
     recurring_group_id = Column(UUID(as_uuid=True), nullable=True, index=True)
     date = Column(Date, nullable=False)
     time_period = Column(String, nullable=False)
+    status = Column(String, nullable=False, default='available', server_default='available')
     max_patients = Column(Integer, nullable=False, default=10) # New max_patients column
     booked_patients = Column(Integer, nullable=False, default=0) # New booked_patients column
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

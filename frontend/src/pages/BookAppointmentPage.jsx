@@ -144,6 +144,25 @@ const BookAppointmentPage = () => {
     setModalMessage('');
   };
 
+  const getScheduleStatusInfo = (schedule) => {
+    const isUnavailable = schedule.status !== 'available' || schedule.booked_patients >= schedule.max_patients;
+    let label = `已預約 ${schedule.booked_patients} / ${schedule.max_patients}`;
+    let statusClass = '';
+
+    if (schedule.status === 'leave_approved') {
+      label = '(已停診)';
+      statusClass = 'unavailable';
+    } else if (schedule.status === 'cancelled') {
+      label = '(已取消)';
+      statusClass = 'unavailable';
+    } else if (schedule.booked_patients >= schedule.max_patients) {
+      label = '(已額滿)';
+      statusClass = 'full';
+    }
+    
+    return { isUnavailable, label, statusClass };
+  };
+
   return (
     <div className="container">
       <div className="page-header">
@@ -233,20 +252,23 @@ const BookAppointmentPage = () => {
 
                 return (
                   <div className="schedule-tile-content">
-                    {daySchedules.map((schedule) => (
-                      <div
-                        key={schedule.schedule_id}
-                        className={`schedule-entry ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''}`}
-                        onClick={() => setSelectedScheduleSlot(schedule)}
-                      >
-                        <span className="doctor-name">{schedule.doctor_name}</span>
-                        <span className="specialty">({schedule.specialty})</span>
-                        <span className="time-period">
-                          ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label})
-                          - 已預約 {schedule.booked_patients} / 最多 {schedule.max_patients} 人
-                        </span>
-                      </div>
-                    ))}
+                    {daySchedules.map((schedule) => {
+                      const { isUnavailable, label, statusClass } = getScheduleStatusInfo(schedule);
+                      return (
+                        <div
+                          key={schedule.schedule_id}
+                          className={`schedule-entry ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''} ${statusClass}`}
+                          onClick={() => !isUnavailable && setSelectedScheduleSlot(schedule)}
+                        >
+                          <span className="doctor-name">{schedule.doctor_name}</span>
+                          <span className="specialty">({schedule.specialty})</span>
+                          <span className="time-period">
+                            ({TIME_PERIOD_OPTIONS.find(option => option.value === schedule.time_period)?.label})
+                            - {label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               }
@@ -265,12 +287,12 @@ const BookAppointmentPage = () => {
             <p>醫師: <strong>{selectedScheduleSlot.doctor_name}</strong> ({selectedScheduleSlot.specialty})</p>
             <p>日期: <strong>{new Date(selectedScheduleSlot.date).toLocaleDateString('zh-TW')}</strong></p>
             <p>時段: <strong>{TIME_PERIOD_OPTIONS.find(option => option.value === selectedScheduleSlot.time_period)?.label}</strong></p>
-            <p>預約人數: <strong>{selectedScheduleSlot.booked_patients} / {selectedScheduleSlot.max_patients}</strong></p>
+            <p>預約狀態: <strong>{getScheduleStatusInfo(selectedScheduleSlot).label}</strong></p>
             <button
               type="button"
               className="btn btn-primary btn-block"
               onClick={handleBookAppointment}
-              disabled={loading}
+              disabled={loading || getScheduleStatusInfo(selectedScheduleSlot).isUnavailable}
             >
               {loading ? '預約中...' : '確認預約'}
             </button>

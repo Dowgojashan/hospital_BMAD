@@ -5,12 +5,14 @@ from typing import Optional, Literal, List # Import Literal
 
 # Define the allowed time periods
 TIME_PERIOD_ENUM = Literal["morning", "afternoon", "night"]
+SCHEDULE_STATUS_ENUM = Literal['available', 'leave_pending', 'leave_approved', 'cancelled']
 
 class ScheduleBase(BaseModel):
     doctor_id: uuid.UUID
     date: date
     time_period: TIME_PERIOD_ENUM # Use the Literal type for validation
-    max_patients: int = Field(..., ge=1) # New field for max patients
+    status: Optional[SCHEDULE_STATUS_ENUM] = 'available'
+    max_patients: int = Field(..., ge=0) # Allow 0 for max patients
 
 
 class ScheduleCreate(ScheduleBase):
@@ -22,14 +24,16 @@ class ScheduleUpdate(BaseModel):
     doctor_id: Optional[uuid.UUID] = None
     date: Optional[date] = Field(default=None) # Explicitly define with Field(default=None)
     time_period: Optional[TIME_PERIOD_ENUM] = None # Use the Literal type for validation
+    status: Optional[SCHEDULE_STATUS_ENUM] = None
     recurring_group_id: Optional[uuid.UUID] = None
-    max_patients: Optional[int] = Field(default=None, ge=1) # New field for max patients
+    max_patients: Optional[int] = Field(default=None, ge=0) # Allow 0 for max patients
 
 
 class SchedulePublic(ScheduleBase):
     model_config = ConfigDict(from_attributes=True)
 
     schedule_id: uuid.UUID
+    status: str # Make status required in public model
     recurring_group_id: Optional[uuid.UUID] = None
     booked_patients: int # New field for booked patients
     created_at: datetime

@@ -11,8 +11,7 @@ class ScheduleService:
     def request_doctor_leave(
         self, db: Session, *, doctor_id: uuid.UUID, leave_request_in: LeaveRequestCreate
     ) -> SchedulePublic:
-        with db.begin():
-            # Try to find an existing schedule for the given date and time period
+        try:
             schedule = db.query(Schedule).filter(
                 Schedule.doctor_id == doctor_id,
                 Schedule.date == leave_request_in.date,
@@ -25,32 +24,30 @@ class ScheduleService:
                         status_code=status.HTTP_409_CONFLICT,
                         detail="該時段已有病患預約，無法停診。"
                     )
-                # Update existing schedule to mark as unavailable
+                schedule.status = 'leave_approved'
                 schedule.max_patients = 0
-                # Optionally, store the reason somewhere if a field is added to Schedule or a new table
-                db.add(schedule)
             else:
-                # Create a new schedule entry marked as unavailable
                 schedule = Schedule(
                     doctor_id=doctor_id,
                     date=leave_request_in.date,
                     time_period=leave_request_in.time_period,
+                    status='leave_approved',
                     max_patients=0,
-                    booked_patients=0, # No patients booked for a new unavailable slot
+                    booked_patients=0,
                 )
-                db.add(schedule)
-            
-            db.flush()
+            db.add(schedule)
             db.commit()
-            db.refresh(schedule) # Refresh to get the latest state after commit
+            db.refresh(schedule)
             return SchedulePublic.model_validate(schedule)
+        except Exception as e:
+            db.rollback()
+            raise e
 
     def request_doctor_leave_range(
         self, db: Session, *, doctor_id: uuid.UUID, leave_request_in: LeaveRequestRangeCreate
     ) -> List[SchedulePublic]:
         updated_schedules = []
-        
-        with db.begin():
+        try:
             # First, check for any conflicts in the entire range
             current_date = leave_request_in.start_date
             while current_date <= leave_request_in.end_date:
@@ -79,26 +76,21 @@ class ScheduleService:
                     ).with_for_update().first()
 
                     if schedule:
+                        schedule.status = 'leave_approved'
                         schedule.max_patients = 0
-                    else:
-                        schedule = Schedule(
-                            doctor_id=doctor_id,
-                            date=current_date,
-                            time_period=time_period,
-                            max_patients=0,
-                            booked_patients=0,
-                        )
-                    db.add(schedule)
-                    updated_schedules.append(schedule)
+                        db.add(schedule)
+                        updated_schedules.append(schedule)
+                    # else: If no existing schedule, skip this slot as per user's clarification
+                    # continue
                 current_date += timedelta(days=1)
             
-            db.flush()
             db.commit()
-
-            # Refresh each object to get its state after commit
             for schedule in updated_schedules:
                 db.refresh(schedule)
 
             return [SchedulePublic.model_validate(s) for s in updated_schedules]
+        except Exception as e:
+            db.rollback()
+            raise e
 
 schedule_service = ScheduleService()
