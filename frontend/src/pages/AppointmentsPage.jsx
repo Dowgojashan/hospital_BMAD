@@ -1,60 +1,59 @@
 import React, { useState, useEffect } from 'react';
-// import { getPatientAppointments, cancelAppointment } from '../services/appointmentService'; // To be adapted
-// import { Appointment, AppointmentStatus } from '../types'; // To be defined or use generic types
-// import { mockAppointments } from '../utils/mockData'; // To be copied or created
 import './AppointmentsPage.css';
 import api from '../api/axios'; // Use existing axios instance
 
-// Mock data for appointments (temporary)
-const mockAppointments = [
-  {
-    appointment_id: 'apt001',
-    doctor_name: 'Dr. Chen',
-    specialty: 'Family Medicine',
-    date: '2025-12-01',
-    time_period: '09:00-09:30',
-    status: 'scheduled',
-  },
-  {
-    appointment_id: 'apt002',
-    doctor_name: 'Dr. Lin',
-    specialty: 'Pediatrics',
-    date: '2025-11-10',
-    time_period: '14:00-14:30',
-    status: 'completed',
-  },
-  {
-    appointment_id: 'apt003',
-    doctor_name: 'Dr. Wang',
-    specialty: 'Dermatology',
-    date: '2025-12-15',
-    time_period: '10:00-10:30',
-    status: 'confirmed',
-  },
+const TIME_PERIOD_OPTIONS = [
+  { value: "morning", label: "上午診" },
+  { value: "afternoon", label: "下午診" },
+  { value: "night", label: "夜間診" },
 ];
+
+// Generic Message Modal Component (copied from BookAppointmentPage.jsx)
+const MessageModal = ({ show, onClose, message, type }) => {
+  if (!show) {
+    return null;
+  }
+
+  const modalTitle = type === 'success' ? '操作成功！' : '操作失敗！'; // Changed title to be more generic
+  const titleClass = type === 'success' ? 'modal-title-success' : 'modal-title-error';
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2 className={titleClass}>{modalTitle}</h2>
+        <p>{message}</p>
+        <button onClick={onClose} className={`btn ${type === 'success' ? 'btn-primary' : 'btn-danger'}`}>關閉</button>
+      </div>
+    </div>
+  );
+};
 
 const AppointmentsPage = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
+  // States for modals
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState(''); // Generic message for modal
+
   useEffect(() => {
     loadAppointments();
   }, []);
 
   const loadAppointments = async () => {
+    setLoading(true);
+    setModalMessage(''); // Clear previous messages
+    setShowErrorModal(false); // Clear previous error modal
     try {
-      // TODO: Integrate with actual API endpoint for fetching patient appointments
-      // const response = await api.get('/api/v1/patient/appointments');
-      // setAppointments(response.data);
-
-      // Using mock data for now
-      setTimeout(() => {
-        setAppointments(mockAppointments);
-        setLoading(false);
-      }, 500);
+      const response = await api.get('/api/v1/patient/appointments');
+      setAppointments(response.data);
     } catch (error) {
       console.error('載入預約失敗:', error);
+      setModalMessage(error.response?.data?.detail || '載入預約失敗，請稍後再試。');
+      setShowErrorModal(true);
+    } finally {
       setLoading(false);
     }
   };
@@ -64,13 +63,22 @@ const AppointmentsPage = () => {
       return;
     }
 
+    setLoading(true);
+    setModalMessage('');
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
+
     try {
-      // TODO: Integrate with actual API endpoint for canceling appointment
-      // await api.post(`/api/v1/patient/appointments/${appointmentId}/cancel`);
-      alert('取消預約成功 (Mock)'); // Mock success
-      loadAppointments();
+      const response = await api.delete(`/api/v1/patient/appointments/${appointmentId}`);
+      setModalMessage(response.data.message || '預約已成功取消！');
+      setShowSuccessModal(true);
+      loadAppointments(); // Reload appointments to reflect the cancellation
     } catch (error) {
-      alert('取消預約失敗 (Mock)'); // Mock failure
+      console.error('取消預約失敗:', error);
+      setModalMessage(error.response?.data?.detail || '取消預約失敗，請稍後再試。');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,15 +99,26 @@ const AppointmentsPage = () => {
     return <span className={`badge ${statusInfo.class}`}>{statusInfo.label}</span>;
   };
 
+  const getTimePeriodLabel = (value) => {
+    const option = TIME_PERIOD_OPTIONS.find(opt => opt.value === value);
+    return option ? option.label : value;
+  };
+
   const filteredAppointments = appointments.filter((apt) => {
     const aptDate = new Date(apt.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (filter === 'upcoming') return aptDate >= today;
-    if (filter === 'past') return aptDate < today;
+    if (filter === 'upcoming') return aptDate >= today && apt.status !== 'cancelled' && apt.status !== 'completed' && apt.status !== 'no_show';
+    if (filter === 'past') return aptDate < today || apt.status === 'cancelled' || apt.status === 'completed' || apt.status === 'no_show';
     return true;
   });
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
+    setModalMessage('');
+  };
 
   if (loading) {
     return (
@@ -149,8 +168,8 @@ const AppointmentsPage = () => {
             <div key={apt.appointment_id} className="card appointment-card">
               <div className="appointment-header">
                 <div>
-                  <h3>{apt.doctor_name || '醫師'}</h3>
-                  <p className="appointment-specialty">{apt.specialty}</p>
+                  <h3>{apt.specialty}</h3>
+                  <p className="appointment-doctor-name">{apt.doctor_name || '醫師'}</p>
                 </div>
                 {getStatusBadge(apt.status)}
               </div>
@@ -162,7 +181,7 @@ const AppointmentsPage = () => {
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">時段：</span>
-                  <span>{apt.time_period}</span>
+                  <span>{getTimePeriodLabel(apt.time_period)}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">預約編號：</span>
@@ -184,6 +203,19 @@ const AppointmentsPage = () => {
           ))}
         </div>
       )}
+
+      <MessageModal
+        show={showSuccessModal}
+        onClose={handleCloseModal}
+        message={modalMessage}
+        type="success"
+      />
+      <MessageModal
+        show={showErrorModal}
+        onClose={handleCloseModal}
+        message={modalMessage}
+        type="error"
+      />
     </div>
   );
 };

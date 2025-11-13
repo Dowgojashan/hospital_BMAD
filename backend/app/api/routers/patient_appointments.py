@@ -55,3 +55,29 @@ def create_patient_appointment(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create appointment: {e}"
         )
+
+@router.get("/appointments", response_model=List[AppointmentPublic])
+def list_patient_appointments(
+    db: Session = Depends(get_db),
+    current_patient: dict = Depends(get_current_patient)
+):
+    """
+    Retrieve a list of appointments for the current patient.
+    """
+    patient_id = current_patient["patient_id"]
+
+    appointments_with_details = appointment_service.get_patient_appointments_with_details(db, patient_id=patient_id)
+    return appointments_with_details
+
+@router.delete("/appointments/{appointment_id}", status_code=status.HTTP_200_OK)
+def cancel_patient_appointment(
+    appointment_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_patient: dict = Depends(get_current_patient)
+):
+    """
+    Allow a patient to cancel their own appointment.
+    """
+    patient_id = current_patient["patient_id"]
+    appointment_service.cancel_appointment(db, appointment_id=appointment_id, patient_id=patient_id)
+    return {"message": "預約已成功取消。"}
