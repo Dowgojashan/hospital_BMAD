@@ -10,16 +10,40 @@ const TIME_PERIOD_OPTIONS = [
   { value: "night", label: "夜間診" },
 ];
 
+// Generic Message Modal Component
+const MessageModal = ({ show, onClose, message, type }) => {
+  if (!show) {
+    return null;
+  }
+
+  const modalTitle = type === 'success' ? '預約成功！' : '預約失敗！';
+  const titleClass = type === 'success' ? 'modal-title-success' : 'modal-title-error';
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2 className={titleClass}>{modalTitle}</h2>
+        <p>{message}</p>
+        <button onClick={onClose} className={`btn ${type === 'success' ? 'btn-primary' : 'btn-danger'}`}>關閉</button>
+      </div>
+    </div>
+  );
+};
+
 const BookAppointmentPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [selectedDoctorId, setSelectedDoctorId] = useState(''); // Changed from selectedDoctor to selectedDoctorId
+  const [selectedDoctorId, setSelectedDoctorId] = useState('');
   const [calendarDate, setCalendarDate] = useState(new Date());
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState(''); // New state for time period filter
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(''); // Changed from error to message for consistency
-  const [selectedScheduleSlot, setSelectedScheduleSlot] = useState(null); // New state to hold selected slot for booking
+  const [selectedScheduleSlot, setSelectedScheduleSlot] = useState(null);
+
+  // States for modals
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState(''); // Generic message for modal
 
   // Fetch all unique specialties from doctors
   const allSpecialties = [...new Set(doctors.map(doctor => doctor.specialty))];
@@ -30,16 +54,14 @@ const BookAppointmentPage = () => {
 
   useEffect(() => {
     loadSchedules();
-  }, [calendarDate, selectedSpecialty, selectedDoctorId, selectedTimePeriod]); // Add selectedTimePeriod here
+  }, [calendarDate, selectedSpecialty, selectedDoctorId, selectedTimePeriod]);
 
   const loadDoctors = async () => {
     setLoading(true);
-    setMessage('');
     try {
       const params = selectedSpecialty ? { specialty: selectedSpecialty } : {};
-      const response = await api.get('/api/v1/patient/doctors', { params }); // Call public doctors endpoint
+      const response = await api.get('/api/v1/patient/doctors', { params });
       setDoctors(response.data);
-      // If a specialty is selected, and the previously selected doctor is not in this specialty, clear selected doctor
       if (selectedSpecialty && selectedDoctorId) {
         const doctorExistsInSpecialty = response.data.some(doc => doc.doctor_id === selectedDoctorId);
         if (!doctorExistsInSpecialty) {
@@ -48,7 +70,8 @@ const BookAppointmentPage = () => {
       }
     } catch (error) {
       console.error('載入醫師列表失敗:', error);
-      setMessage('載入醫師列表失敗，請稍後再試。');
+      setModalMessage('載入醫師列表失敗，請稍後再試。');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -56,30 +79,28 @@ const BookAppointmentPage = () => {
 
   const loadSchedules = async () => {
     setLoading(true);
-    setMessage('');
     try {
       const params = {
         month: calendarDate.getMonth() + 1,
         year: calendarDate.getFullYear(),
       };
       if (selectedDoctorId) {
-        params.doctor_id = selectedDoctorId; // Use doctor_id for single doctor filter
+        params.doctor_id = selectedDoctorId;
       } else if (selectedSpecialty) {
-        // If no specific doctor is selected but a specialty is, filter by doctors in that specialty
-        // The backend list_public_schedules can filter by specialty directly
         params.specialty = selectedSpecialty;
       }
-      if (selectedTimePeriod) { // Add time period to params
+      if (selectedTimePeriod) {
         params.time_period = selectedTimePeriod;
       }
-      const response = await api.get('/api/v1/patient/schedules', { params }); // Call public patient schedules endpoint
+      const response = await api.get('/api/v1/patient/schedules', { params });
       setSchedules(response.data);
     } catch (error) {
       console.error('載入班表失敗:', error);
-      setMessage('載入班表失敗，請稍後再試。');
+      setModalMessage('載入班表失敗，請稍後再試。');
       if (error.response?.data?.detail) {
-        setMessage(`載入班表失敗: ${error.response.data.detail}`);
+        setModalMessage(`載入班表失敗: ${error.response.data.detail}`);
       }
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -87,12 +108,15 @@ const BookAppointmentPage = () => {
 
   const handleBookAppointment = async () => {
     if (!selectedScheduleSlot) {
-      setMessage('請選擇一個班表時段進行預約。');
+      setModalMessage('請選擇一個班表時段進行預約。');
+      setShowErrorModal(true);
       return;
     }
 
     setLoading(true);
-    setMessage('');
+    setShowSuccessModal(false); // Clear any previous success modal
+    setShowErrorModal(false);   // Clear any previous error modal
+    setModalMessage('');        // Clear previous message
 
     try {
       const appointmentData = {
@@ -101,15 +125,23 @@ const BookAppointmentPage = () => {
         time_period: selectedScheduleSlot.time_period,
       };
       await api.post('/api/v1/patient/appointments', appointmentData);
-      setMessage('預約成功！');
-      setSelectedScheduleSlot(null); // Clear selection after successful booking
-      loadSchedules(); // Reload schedules to reflect the booking
+      setModalMessage('您的預約已成功建立！');
+      setShowSuccessModal(true);
+      setSelectedScheduleSlot(null);
+      loadSchedules();
     } catch (error) {
       console.error('預約失敗:', error);
-      setMessage(error.response?.data?.detail || '預約失敗，請稍後再試。');
+      setModalMessage(error.response?.data?.detail || '預約失敗，請稍後再試。');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
+    setModalMessage('');
   };
 
   return (
@@ -118,12 +150,6 @@ const BookAppointmentPage = () => {
         <h1 className="page-title">線上掛號</h1>
         <p className="page-subtitle">選擇科別、醫師和時段進行預約</p>
       </div>
-
-      {message && (
-        <div className={`alert ${message.includes('成功') ? 'alert-success' : 'alert-danger'}`}>
-          {message}
-        </div>
-      )}
 
       <div className="card">
         <h3>查詢班表</h3>
@@ -135,7 +161,7 @@ const BookAppointmentPage = () => {
               value={selectedSpecialty}
               onChange={(e) => {
                 setSelectedSpecialty(e.target.value);
-                setSelectedDoctorId(''); // Clear selected doctor when specialty changes
+                setSelectedDoctorId('');
               }}
             >
               <option value="">全部科別</option>
@@ -153,7 +179,7 @@ const BookAppointmentPage = () => {
               className="form-select"
               value={selectedDoctorId}
               onChange={(e) => setSelectedDoctorId(e.target.value)}
-              disabled={!selectedSpecialty && doctors.length === 0} // Disable if no specialty selected and no doctors loaded
+              disabled={!selectedSpecialty && doctors.length === 0}
             >
               <option value="">所有醫師</option>
               {doctors
@@ -211,7 +237,7 @@ const BookAppointmentPage = () => {
                       <div
                         key={schedule.schedule_id}
                         className={`schedule-entry ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''}`}
-                        onClick={() => setSelectedScheduleSlot(schedule)} // Select slot on click
+                        onClick={() => setSelectedScheduleSlot(schedule)}
                       >
                         <span className="doctor-name">{schedule.doctor_name}</span>
                         <span className="specialty">({schedule.specialty})</span>
@@ -253,6 +279,19 @@ const BookAppointmentPage = () => {
           <p>請從日曆中選擇一個可用的班表時段。</p>
         )}
       </div>
+
+      <MessageModal
+        show={showSuccessModal}
+        onClose={handleCloseModal}
+        message={modalMessage}
+        type="success"
+      />
+      <MessageModal
+        show={showErrorModal}
+        onClose={handleCloseModal}
+        message={modalMessage}
+        type="error"
+      />
     </div>
   );
 };

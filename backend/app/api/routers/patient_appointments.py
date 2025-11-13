@@ -5,7 +5,7 @@ import uuid
 from typing import List
 
 from app.db.session import get_db
-from app.schemas.appointment import AppointmentCreate, AppointmentPublic
+from app.schemas.appointment import AppointmentCreate, AppointmentPublic, AppointmentInDB
 from app.services.appointment_service import appointment_service
 from app.api.dependencies import get_current_patient # Assuming get_current_patient exists
 from app.crud.crud_doctor import get_doctor
@@ -42,7 +42,7 @@ def create_patient_appointment(
             )
 
         return AppointmentPublic(
-            **appointment.dict(),
+            **AppointmentInDB.model_validate(appointment).model_dump(),
             doctor_name=db_doctor.name,
             specialty=db_doctor.specialty,
             patient_name=db_patient.name
