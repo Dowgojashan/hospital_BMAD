@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Date, DateTime, func
+from sqlalchemy import Column, String, Date, DateTime, func, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 
 from sqlalchemy.orm import relationship
@@ -17,6 +17,9 @@ class Patient(Base):
     dob = Column(Date, nullable=False)
     phone = Column(String, nullable=False)
     email = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_code = Column(String, nullable=True)
+    code_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     suspended_until = Column(Date, nullable=True)
 

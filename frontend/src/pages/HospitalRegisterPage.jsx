@@ -11,6 +11,7 @@ const HospitalRegisterPage = () => {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '', // New state for confirm password
     phone: '',
     dob: '',
     card_number: '',
@@ -26,6 +27,11 @@ const HospitalRegisterPage = () => {
     // --- Client-side Validation ---
     if (formData.password.length < 6) {
       setError('密碼長度至少要 6 碼');
+      setLoading(false);
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) { // New validation for confirm password
+      setError('密碼與確認密碼不符');
       setLoading(false);
       return;
     }
@@ -54,7 +60,7 @@ const HospitalRegisterPage = () => {
         card_number: formData.card_number,
       };
       await api.post('/api/v1/register/patient', payload);
-      navigate('/login'); // Assuming successful registration redirects to login
+      navigate(`/verify-email?email=${formData.email}`); // Redirect to verification page
     } catch (err) {
       setError(err.response?.data?.detail || '註冊失敗，請檢查輸入資料');
     } finally {
@@ -117,6 +123,21 @@ const HospitalRegisterPage = () => {
               }
               required
               placeholder="請輸入密碼"
+              minLength={6}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">確認密碼 *</label>
+            <input
+              type="password"
+              className="form-control"
+              value={formData.confirmPassword}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
+              required
+              placeholder="請再次輸入密碼"
               minLength={6}
             />
           </div>

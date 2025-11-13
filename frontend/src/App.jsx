@@ -16,6 +16,7 @@ import AdminScheduleManagementPage from './pages/AdminScheduleManagementPage' //
 import AdminUserManagementPage from './pages/AdminUserManagementPage' // Import AdminUserManagementPage
 import AdminAuditLogPage from './pages/AdminAuditLogPage' // Import AdminAuditLogPage
 import AdminLeaveManagementPage from './pages/AdminLeaveManagementPage';
+import EmailVerificationPage from './pages/EmailVerificationPage'; // Import EmailVerificationPage
 import { useAuthStore } from './store/authStore'
 import ProtectedAdminRoute from './components/ProtectedAdminRoute'
 
@@ -55,6 +56,7 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<HospitalLoginPage />} />
         <Route path="/register" element={<HospitalRegisterPage />} />
+        <Route path="/verify-email" element={<EmailVerificationPage />} /> {/* New route for email verification */}
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
         <Route path="/book" element={<ProtectedRoute><BookAppointmentPage /></ProtectedRoute>} />

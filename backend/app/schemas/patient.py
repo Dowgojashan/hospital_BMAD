@@ -34,6 +34,7 @@ class PatientPublic(BaseModel):
     phone: str
     email: EmailStr
     card_number: str
+    is_verified: bool # Add is_verified field
     created_at: datetime
 
 

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, Tuple, List
 from fastapi import HTTPException, status # Import status
 import uuid # Import uuid
+from datetime import datetime # Import datetime
 
 from app.models import Admin, Doctor, Patient
 from app.schemas.patient import PatientCreate, PatientUpdate # Import PatientUpdate
@@ -43,7 +44,13 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Tup
     return None
 
 
-def create_patient(db: Session, patient_in: PatientCreate):
+def create_patient(
+    db: Session,
+    patient_in: PatientCreate,
+    is_verified: bool = False,
+    verification_code: Optional[str] = None,
+    code_expires_at: Optional[datetime] = None
+):
     logger.info("create_patient: start")
 
     # Check for existing email
@@ -64,6 +71,9 @@ def create_patient(db: Session, patient_in: PatientCreate):
         dob=patient_in.dob,
         phone=patient_in.phone,
         email=patient_in.email,
+        is_verified=is_verified,
+        verification_code=verification_code,
+        code_expires_at=code_expires_at,
     )
     db.add(db_obj)
     db.commit()
@@ -74,6 +84,9 @@ def create_patient(db: Session, patient_in: PatientCreate):
 
 def get_patient(db: Session, patient_id: uuid.UUID) -> Optional[Patient]:
     return db.query(Patient).filter(Patient.patient_id == patient_id).first()
+
+def get_patient_by_email(db: Session, email: str) -> Optional[Patient]:
+    return db.query(Patient).filter(Patient.email == email).first()
 
 
 def list_patients(db: Session, skip: int = 0, limit: int = 100) -> List[Patient]:

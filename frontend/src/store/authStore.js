@@ -11,6 +11,7 @@ const getUserFromToken = (token) => {
     return {
       id: decoded.sub,
       role: decoded.role,
+      is_verified: decoded.is_verified, // Include is_verified from the token
       // Add other properties from decoded token if needed, e.g., name, email
       // For now, we only need id and role for authentication checks
     };

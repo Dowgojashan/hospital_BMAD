@@ -40,7 +40,13 @@ const HospitalLoginPage = () => {
         navigate('/'); // Navigate to the main home page for patients/doctors
       }
     } catch (err) {
-      setError(err.response?.data?.detail || '登入失敗，請檢查帳號密碼');
+      const errorDetail = err.response?.data?.detail;
+      if (errorDetail === "Email not verified. Please check your email for a verification code or resend it.") {
+        setError(errorDetail);
+        navigate(`/verify-email?email=${formData.email}`);
+      } else {
+        setError(errorDetail || '登入失敗，請檢查帳號密碼');
+      }
     } finally {
       setLoading(false);
     }
