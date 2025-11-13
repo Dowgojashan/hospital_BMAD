@@ -16,10 +16,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.routers import auth, admin_management, schedules, profile, doctor_schedules, patient_schedules, patient_appointments
+from app.api.routers import auth, admin_management, schedules, profile, doctor_schedules, patient_schedules, patient_appointments, admin_leave_management
 
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(admin_management.router, prefix="/api/v1", tags=["admin-management"])
+app.include_router(admin_leave_management.router, prefix="/api/v1/admin", tags=["admin-leave-management"])
 app.include_router(schedules.router, prefix="/api/v1/schedules", tags=["schedules"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["profile-management"])
 app.include_router(doctor_schedules.router, prefix="/api/v1/doctors", tags=["doctor-schedules"])

@@ -7,11 +7,12 @@ import uuid
 from app.db.session import get_db
 from app.models.doctor import Doctor
 from app.crud import crud_schedule
-from app.schemas.schedule import SchedulePublic, ScheduleDoctorPublic, LeaveRequestCreate, LeaveRequestRangeCreate # Import ScheduleDoctorPublic and LeaveRequestCreate
+from app.schemas.schedule import SchedulePublic, ScheduleDoctorPublic, DoctorLeaveRequestInput, LeaveRequestRangeCreate # Import ScheduleDoctorPublic and DoctorLeaveRequestInput
 from app.api.dependencies import get_current_active_doctor # Import the new dependency
-from app.services.schedule_service import schedule_service # Import schedule_service
+from app.services.schedule_service import ScheduleService # Import ScheduleService class
 
 router = APIRouter()
+schedule_service = ScheduleService() # Create an instance of the service
 
 @router.get("/me/schedules", response_model=List[ScheduleDoctorPublic]) # Use ScheduleDoctorPublic
 def list_my_schedules(
@@ -34,7 +35,7 @@ def list_my_schedules(
 
 @router.post("/me/leave-requests", response_model=SchedulePublic, status_code=status.HTTP_201_CREATED)
 def submit_leave_request(
-    leave_request_in: LeaveRequestCreate,
+    leave_request_in: DoctorLeaveRequestInput,
     db: Session = Depends(get_db),
     current_doctor: Doctor = Depends(get_current_active_doctor),
 ):

@@ -15,6 +15,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage' // Import AdminDashb
 import AdminScheduleManagementPage from './pages/AdminScheduleManagementPage' // Import AdminScheduleManagementPage
 import AdminUserManagementPage from './pages/AdminUserManagementPage' // Import AdminUserManagementPage
 import AdminAuditLogPage from './pages/AdminAuditLogPage' // Import AdminAuditLogPage
+import AdminLeaveManagementPage from './pages/AdminLeaveManagementPage';
 import { useAuthStore } from './store/authStore'
 import ProtectedAdminRoute from './components/ProtectedAdminRoute'
 
@@ -65,6 +66,7 @@ function AppContent() {
         <Route path="/doctor/leave" element={<ProtectedRoute><LeaveRequestPage /></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} /> {/* Route for AdminDashboardPage */}
         <Route path="/admin/schedules" element={<ProtectedAdminRoute><AdminScheduleManagementPage /></ProtectedAdminRoute>} /> {/* Route for AdminScheduleManagementPage */}
+        <Route path="/admin/leave-management" element={<ProtectedAdminRoute><AdminLeaveManagementPage /></ProtectedAdminRoute>} />
         <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUserManagementPage /></ProtectedAdminRoute>} /> {/* Route for AdminUserManagementPage */}
         <Route path="/admin/audit" element={<ProtectedAdminRoute><AdminAuditLogPage /></ProtectedAdminRoute>} /> {/* Route for AdminAuditLogPage */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

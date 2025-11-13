@@ -84,6 +84,11 @@ const Navbar = () => {
                     </Link>
                   </li>
                   <li className="nav-item">
+                    <Link to="/admin/leave-management" className={`nav-link ${isActive('/admin/leave-management')}`}>
+                      停診管理
+                    </Link>
+                  </li>
+                  <li className="nav-item">
                     <Link to="/admin/users" className={`nav-link ${isActive('/admin/users')}`}>
                       帳號管理
                     </Link>

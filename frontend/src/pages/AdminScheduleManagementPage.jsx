@@ -543,7 +543,7 @@ const AdminScheduleManagementPage = () => {
           value={calendarDate}
           onActiveStartDateChange={({ activeStartDate }) => setCalendarDate(activeStartDate)}
           minDate={new Date()}
-          maxDate={new Date(new Date().setMonth(new Date().getMonth() + 3))}
+          maxDate={new Date(new Date().setFullYear(new Date().getFullYear() + 1))}
           locale="zh-TW"
           className="react-calendar-custom"
           tileContent={({ date, view }) => {

@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 
 from app.models.schedule import Schedule
 from app.models.doctor import Doctor
+from app.models.leave_request import LeaveRequest # Import LeaveRequest
 from app.schemas.schedule import ScheduleCreate, ScheduleUpdate, ScheduleRecurringCreate
 
 
@@ -352,4 +353,72 @@ def delete_recurring_schedules(
     return deleted_count
 
 
+def list_pending_leave_requests(db: Session) -> List[dict]:
+    """
+    Lists all schedule entries that are pending leave approval, including the leave reason.
+    """
+    query = (
+        db.query(Schedule, Doctor, LeaveRequest)
+        .join(Doctor, Schedule.doctor_id == Doctor.doctor_id)
+        .outerjoin(LeaveRequest, Schedule.schedule_id == LeaveRequest.schedule_id)
+        .filter(Schedule.status == "leave_pending")
+        .order_by(Schedule.date.asc())
+    )
 
+    results = []
+    for schedule_obj, doctor_obj, leave_request_obj in query.all():
+        schedule_data = {
+            "schedule_id": schedule_obj.schedule_id,
+            "doctor_id": schedule_obj.doctor_id,
+            "date": schedule_obj.date,
+            "time_period": schedule_obj.time_period,
+            "status": schedule_obj.status,
+            "max_patients": schedule_obj.max_patients,
+            "booked_patients": schedule_obj.booked_patients,
+            "recurring_group_id": schedule_obj.recurring_group_id,
+            "created_at": schedule_obj.created_at,
+            "doctor_name": doctor_obj.name,
+            "specialty": doctor_obj.specialty,
+            "leave_reason": leave_request_obj.reason if leave_request_obj else None, # Include the reason
+        }
+        results.append(schedule_data)
+    return results
+
+
+def update_schedule_status(db: Session, schedule_id: uuid.UUID, new_status: str) -> Optional[dict]:
+    """
+    Updates the status of a schedule and returns the enriched object.
+    """
+    schedule_obj = db.query(Schedule).filter(Schedule.schedule_id == schedule_id).first()
+    if not schedule_obj:
+        return None
+
+    schedule_obj.status = new_status
+    if new_status == 'available':
+        # Restore max_patients to a default value, assuming 10
+        schedule_obj.max_patients = 10
+    elif new_status == 'leave_approved':
+        schedule_obj.max_patients = 0
+
+    db.commit()
+    db.refresh(schedule_obj)
+
+    # Fetch doctor info to build the full response object
+    doctor_obj = db.query(Doctor).filter(Doctor.doctor_id == schedule_obj.doctor_id).first()
+    if not doctor_obj:
+        # This should ideally not happen if data integrity is maintained
+        return None
+
+    return {
+        "schedule_id": schedule_obj.schedule_id,
+        "doctor_id": schedule_obj.doctor_id,
+        "date": schedule_obj.date,
+        "time_period": schedule_obj.time_period,
+        "status": schedule_obj.status,
+        "max_patients": schedule_obj.max_patients,
+        "booked_patients": schedule_obj.booked_patients,
+        "recurring_group_id": schedule_obj.recurring_group_id,
+        "created_at": schedule_obj.created_at,
+        "doctor_name": doctor_obj.name,
+        "specialty": doctor_obj.specialty,
+    }

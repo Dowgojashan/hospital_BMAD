@@ -42,6 +42,9 @@ class ScheduleDoctorPublic(SchedulePublic):
     doctor_name: str
     specialty: str
 
+class AdminLeaveRequestPublic(ScheduleDoctorPublic):
+    leave_reason: Optional[str] = None
+
 
 class ScheduleRecurringCreate(BaseModel):
     doctor_id: uuid.UUID
@@ -51,7 +54,7 @@ class ScheduleRecurringCreate(BaseModel):
     months_to_create: int = Field(..., ge=1, le=3)
     max_patients: int = Field(10, ge=1) # New field for max patients
 
-class LeaveRequestCreate(BaseModel):
+class DoctorLeaveRequestInput(BaseModel):
     date: date
     time_period: TIME_PERIOD_ENUM
     reason: str = Field(..., min_length=3, max_length=500)
