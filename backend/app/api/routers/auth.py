@@ -1,6 +1,6 @@
 import logging
 import random
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
@@ -14,7 +14,8 @@ from app.crud import crud_user
 from app.core import security
 from app.utils.email_sender import email_sender # Import the email sender
 from app.models.patient import Patient # Import Patient model
-from app.schemas.auth import EmailRequest, VerifyEmailRequest # Import new auth schemas
+from app.schemas.auth import EmailRequest, VerifyEmailRequest, ResetPasswordRequest # Import new auth schemas
+import secrets
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ def register_patient(
 
     # Generate OTP and expiration
     otp = str(random.randint(100000, 999999))
-    otp_expires_at = datetime.now() + timedelta(minutes=10)
+    otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
 
     # Create patient with verification details
     patient = crud_user.create_patient(
@@ -99,7 +100,7 @@ def resend_verification_email(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified.")
 
     otp = str(random.randint(100000, 999999))
-    otp_expires_at = datetime.now() + timedelta(minutes=10)
+    otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
 
     patient.verification_code = otp
     patient.code_expires_at = otp_expires_at
@@ -123,7 +124,7 @@ def verify_email(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already verified.")
     if not patient.verification_code or patient.verification_code != payload.otp: # Use payload.otp
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid verification code.")
-    if patient.code_expires_at and patient.code_expires_at < datetime.now():
+    if patient.code_expires_at and patient.code_expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification code has expired.")
 
     patient.is_verified = True
@@ -134,3 +135,65 @@ def verify_email(
     db.refresh(patient)
 
     return {"message": "Email verified successfully."}
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+def forgot_password(
+    payload: EmailRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    patient = crud_user.get_patient_by_email(db, payload.email)
+    if not patient:
+        # To prevent user enumeration, we don't reveal if the user was found or not.
+        # We'll log it, but return a generic success message.
+        logger.info(f"Password reset requested for non-existent email: {payload.email}")
+        return {"message": "If an account with this email exists, a password reset link has been sent."}
+
+    # Generate a secure, URL-safe token
+    token = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    
+    patient.reset_password_token = token
+    patient.reset_token_expires_at = now + timedelta(hours=1) # Token valid for 1 hour
+    db.add(patient)
+    db.commit()
+
+    # Send password reset email in the background
+    background_tasks.add_task(email_sender.send_password_reset_email, patient.email, token)
+
+    return {"message": "If an account with this email exists, a password reset link has been sent."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+def reset_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    patient = crud_user.get_patient_by_reset_token(db, payload.token)
+    
+    # Validate password length
+    if len(payload.password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long."
+        )
+
+    # Check if token is valid and not expired
+    if not patient or not patient.reset_token_expires_at or patient.reset_token_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset token."
+        )
+
+    # Update password
+    patient.password_hash = security.get_password_hash(payload.password)
+    
+    # Invalidate the token
+    patient.reset_password_token = None
+    patient.reset_token_expires_at = None
+    
+    db.add(patient)
+    db.commit()
+
+    return {"message": "Password has been reset successfully."}

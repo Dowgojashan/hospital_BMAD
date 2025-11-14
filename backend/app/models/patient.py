@@ -20,6 +20,8 @@ class Patient(Base):
     is_verified = Column(Boolean, default=False, nullable=False)
     verification_code = Column(String, nullable=True)
     code_expires_at = Column(DateTime(timezone=True), nullable=True)
+    reset_password_token = Column(String, nullable=True)
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     suspended_until = Column(Date, nullable=True)
 

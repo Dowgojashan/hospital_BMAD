@@ -108,6 +108,10 @@ const HospitalLoginPage = () => {
             <p>
               還沒有帳號？ <Link to="/register">立即註冊</Link>
             </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+              <Link to="/forgot-password">忘記密碼？</Link>
+              <Link to="/resend-verification">重寄驗證信</Link>
+            </div>
           </div>
         </form>
       </div>

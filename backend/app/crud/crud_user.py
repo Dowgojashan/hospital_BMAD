@@ -89,6 +89,10 @@ def get_patient_by_email(db: Session, email: str) -> Optional[Patient]:
     return db.query(Patient).filter(Patient.email == email).first()
 
 
+def get_patient_by_reset_token(db: Session, token: str) -> Optional[Patient]:
+    return db.query(Patient).filter(Patient.reset_password_token == token).first()
+
+
 def list_patients(db: Session, skip: int = 0, limit: int = 100) -> List[Patient]:
     return db.query(Patient).offset(skip).limit(limit).all()
 

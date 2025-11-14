@@ -61,6 +61,10 @@ export default function LoginPage() {
       <div style={{ marginTop: '1rem', textAlign: 'center' }}>
         還沒有帳號嗎？ <Link to="/register">點此註冊</Link>
       </div>
+      <div style={{ marginTop: '0.5rem', textAlign: 'center', display: 'flex', justifyContent: 'space-around' }}>
+        <Link to="/forgot-password">忘記密碼？</Link>
+        <Link to="/resend-verification">重寄驗證信</Link>
+      </div>
     </div>
   )
 }

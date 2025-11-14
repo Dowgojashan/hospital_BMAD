@@ -30,6 +30,25 @@ class EmailSender:
         """
         self._send_email(recipient_email, subject, body)
 
+    def send_password_reset_email(self, recipient_email: str, token: str):
+        subject = "重設您的密碼"
+        # Assuming the frontend URL for password reset is /reset-password
+        reset_url = f"http://localhost:5173/reset-password?token={token}"
+        body = f"""
+        <html>
+        <body>
+            <p>您好，</p>
+            <p>您收到此郵件是因為您（或其他人）要求重設您帳戶的密碼。</p>
+            <p>請點擊以下連結來重設您的密碼：</p>
+            <p><a href="{reset_url}">{reset_url}</a></p>
+            <p>如果您沒有要求重設密碼，請忽略此郵件。</p>
+            <p>此連結將在 1 小時後過期。</p>
+            <p>謝謝！</p>
+        </body>
+        </html>
+        """
+        self._send_email(recipient_email, subject, body)
+
     def _send_email(self, recipient_email: str, subject: str, body: str):
         msg = MIMEMultipart("alternative")
         msg["From"] = self.sender_email

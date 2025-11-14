@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import HospitalLoginPage from './pages/HospitalLoginPage'
 import HospitalRegisterPage from './pages/HospitalRegisterPage'
 import HomePage from './pages/HomePage'
@@ -11,14 +11,18 @@ import ProfilePage from './pages/ProfilePage'
 import DoctorSchedulesPage from './pages/DoctorSchedulesPage'
 import DoctorRecordsPage from './pages/DoctorRecordsPage'
 import LeaveRequestPage from './pages/LeaveRequestPage'
-import AdminDashboardPage from './pages/AdminDashboardPage' // Import AdminDashboardPage
-import AdminScheduleManagementPage from './pages/AdminScheduleManagementPage' // Import AdminScheduleManagementPage
-import AdminUserManagementPage from './pages/AdminUserManagementPage' // Import AdminUserManagementPage
-import AdminAuditLogPage from './pages/AdminAuditLogPage' // Import AdminAuditLogPage
+import AdminDashboardPage from './pages/AdminDashboardPage'
+import AdminScheduleManagementPage from './pages/AdminScheduleManagementPage'
+import AdminUserManagementPage from './pages/AdminUserManagementPage'
+import AdminAuditLogPage from './pages/AdminAuditLogPage'
 import AdminLeaveManagementPage from './pages/AdminLeaveManagementPage';
-import EmailVerificationPage from './pages/EmailVerificationPage'; // Import EmailVerificationPage
+import EmailVerificationPage from './pages/EmailVerificationPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResendVerificationPage from './pages/ResendVerificationPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import { useAuthStore } from './store/authStore'
 import ProtectedAdminRoute from './components/ProtectedAdminRoute'
+import Navbar from './components/Navbar';
 
 function Dashboard() {
   console.info('Dashboard: render')
@@ -38,8 +42,6 @@ function ProtectedRoute({ children }) {
   return children
 }
 
-import Navbar from './components/Navbar'; // Import Navbar component
-
 function AppContent() {
   console.info('AppContent: render')
   const navigate = useNavigate()
@@ -52,11 +54,14 @@ function AppContent() {
 
   return (
     <>
-      <Navbar /> {/* Render Navbar component */}
+      <Navbar />
       <Routes>
         <Route path="/login" element={<HospitalLoginPage />} />
         <Route path="/register" element={<HospitalRegisterPage />} />
-        <Route path="/verify-email" element={<EmailVerificationPage />} /> {/* New route for email verification */}
+        <Route path="/verify-email" element={<EmailVerificationPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/resend-verification" element={<ResendVerificationPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/appointments" element={<ProtectedRoute><AppointmentsPage /></ProtectedRoute>} />
         <Route path="/book" element={<ProtectedRoute><BookAppointmentPage /></ProtectedRoute>} />
@@ -66,13 +71,13 @@ function AppContent() {
         <Route path="/doctor/schedules" element={<ProtectedRoute><DoctorSchedulesPage /></ProtectedRoute>} />
         <Route path="/doctor/records" element={<ProtectedRoute><DoctorRecordsPage /></ProtectedRoute>} />
         <Route path="/doctor/leave" element={<ProtectedRoute><LeaveRequestPage /></ProtectedRoute>} />
-        <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} /> {/* Route for AdminDashboardPage */}
-        <Route path="/admin/schedules" element={<ProtectedAdminRoute><AdminScheduleManagementPage /></ProtectedAdminRoute>} /> {/* Route for AdminScheduleManagementPage */}
+        <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} />
+        <Route path="/admin/schedules" element={<ProtectedAdminRoute><AdminScheduleManagementPage /></ProtectedAdminRoute>} />
+
         <Route path="/admin/leave-management" element={<ProtectedAdminRoute><AdminLeaveManagementPage /></ProtectedAdminRoute>} />
-        <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUserManagementPage /></ProtectedAdminRoute>} /> {/* Route for AdminUserManagementPage */}
-        <Route path="/admin/audit" element={<ProtectedAdminRoute><AdminAuditLogPage /></ProtectedAdminRoute>} /> {/* Route for AdminAuditLogPage */}
+        <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUserManagementPage /></ProtectedAdminRoute>} />
+        <Route path="/admin/audit" element={<ProtectedAdminRoute><AdminAuditLogPage /></ProtectedAdminRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        {/* The original /admin/account-management route is replaced by /admin/users */}
       </Routes>
     </>
   )
