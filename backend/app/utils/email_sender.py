@@ -49,6 +49,26 @@ class EmailSender:
         """
         self._send_email(recipient_email, subject, body)
 
+    def send_appointment_confirmation(self, recipient_email: str, appointment_details: dict):
+        subject = "您的預約已確認"
+        body = f"""
+        <html>
+        <body>
+            <p>您好，{appointment_details['patient_name']}！</p>
+            <p>您的預約已成功確認。以下是您的預約詳細資訊：</p>
+            <ul>
+                <li><strong>科別:</strong> {appointment_details['department']}</li>
+                <li><strong>醫生:</strong> {appointment_details['doctor_name']}</li>
+                <li><strong>日期:</strong> {appointment_details['date']}</li>
+                <li><strong>時段:</strong> {appointment_details['time_period']}</li>
+            </ul>
+            <p>提醒您準時就診。</p>
+            <p>謝謝！</p>
+        </body>
+        </html>
+        """
+        self._send_email(recipient_email, subject, body)
+
     def _send_email(self, recipient_email: str, subject: str, body: str):
         msg = MIMEMultipart("alternative")
         msg["From"] = self.sender_email

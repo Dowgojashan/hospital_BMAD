@@ -1,22 +1,32 @@
 # backend/app/services/appointment_service.py
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 import uuid
 from datetime import date
 from typing import List # Import List
 from sqlalchemy import case # Import case
 
 from app.crud.crud_appointment import appointment as crud_appointment
+from app.crud.crud_user import get_patient
+from app.crud.crud_doctor import get_doctor
 from app.schemas.appointment import AppointmentCreate, AppointmentInDB, AppointmentPublic
 from app.models.schedule import Schedule
 from app.models.appointment import Appointment
 from app.models.doctor import Doctor # Import Doctor model
 from app.models.patient import Patient # Import Patient model
+from app.utils.email_sender import email_sender
 
 class AppointmentService:
     def create_appointment(
-        self, db: Session, *, patient_id: uuid.UUID, appointment_in: AppointmentCreate
+        self, db: Session, *, patient_id: uuid.UUID, appointment_in: AppointmentCreate, background_tasks: BackgroundTasks
     ) -> AppointmentInDB:
+            # 0. Prevent same-day booking
+            if appointment_in.date == date.today():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="不開放預約當日門診"
+                )
+
             # 1. Check if the schedule exists and is available
             # Use SELECT ... FOR UPDATE to lock the schedule row to prevent race conditions
             # when multiple patients try to book the same slot.
@@ -63,6 +73,33 @@ class AppointmentService:
 
             # 5. Create the appointment
             new_appointment = crud_appointment.create(db, obj_in=appointment_in, patient_id=patient_id)
+            
+            db.commit()
+            db.refresh(new_appointment)
+
+            # 6. Send confirmation email in the background
+            patient = get_patient(db, patient_id=patient_id)
+            doctor = get_doctor(db, doctor_id=appointment_in.doctor_id)
+
+            if patient and doctor:
+                time_period_map = {
+                    "morning": "上午診",
+                    "afternoon": "下午診",
+                    "night": "夜間診",
+                }
+                
+                appointment_details = {
+                    "patient_name": patient.name,
+                    "doctor_name": doctor.name,
+                    "department": doctor.specialty,
+                    "date": new_appointment.date.strftime("%Y-%m-%d"),
+                    "time_period": time_period_map.get(new_appointment.time_period, new_appointment.time_period),
+                }
+                background_tasks.add_task(
+                    email_sender.send_appointment_confirmation,
+                    recipient_email=patient.email,
+                    appointment_details=appointment_details
+                )
 
             return new_appointment
 

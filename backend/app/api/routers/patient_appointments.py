@@ -1,5 +1,5 @@
 # backend/app/api/routers/patient_appointments.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 import uuid
 from typing import List
@@ -16,6 +16,7 @@ router = APIRouter()
 @router.post("/appointments", response_model=AppointmentPublic, status_code=status.HTTP_201_CREATED)
 def create_patient_appointment(
     appointment_in: AppointmentCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_patient: dict = Depends(get_current_patient) # Patient must be logged in
 ):
@@ -25,7 +26,12 @@ def create_patient_appointment(
     patient_id = current_patient["patient_id"] # Assuming patient_id is in the token payload
 
     try:
-        appointment = appointment_service.create_appointment(db, patient_id=patient_id, appointment_in=appointment_in)
+        appointment = appointment_service.create_appointment(
+            db, 
+            patient_id=patient_id, 
+            appointment_in=appointment_in,
+            background_tasks=background_tasks
+        )
         # For AppointmentPublic, we need doctor_name, specialty, patient_name
         # This would typically be handled by a more comprehensive service method or a view.
         # For now, we'll just return the basic appointment and assume frontend can fetch details.
