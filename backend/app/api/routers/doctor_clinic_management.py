@@ -221,7 +221,7 @@ async def get_doctor_schedule_queue_status(
         }
     
     # 獲取該班表時段所有已報到但未看診的病患
-    checked_in_patients = crud_checkin.get_checked_in_patients_for_schedule(db, schedule_id=schedule_id)
+    checked_in_patients = crud_checkin.checkin.get_checked_in_patients_for_schedule(db, schedule_id=schedule_id)
     
     # 計算前方等待人數
     waiting_count = 0
@@ -297,7 +297,7 @@ async def get_waiting_patients(
     if not room_day:
         return [] # 如果診間未開診，則沒有候診病患
 
-    checked_in_patients = crud_checkin.get_checked_in_patients_for_schedule(db, schedule_id=schedule_id)
+    checked_in_patients = crud_checkin.checkin.get_checked_in_patients_for_schedule(db, schedule_id=schedule_id)
     
     # 篩選出尚未被叫號的病患，並按號碼排序
     waiting_list = []
