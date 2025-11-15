@@ -34,10 +34,20 @@ class QueueService:
                 detail="未找到報到記錄。"
             )
 
-        # 2. Get the RoomDay record to find the current called sequence
+        # 2. Get the Appointment record to find the schedule_id
+        appointment_record = self.db.query(Appointment).filter(
+            Appointment.appointment_id == checkin_record.appointment_id
+        ).first()
+
+        if not appointment_record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="未找到預約記錄。"
+            )
+
+        # 3. Get the RoomDay record using schedule_id
         room_day = self.db.query(RoomDay).filter(
-            RoomDay.room_id == checkin_record.room_id,
-            RoomDay.date == checkin_record.checkin_date
+            RoomDay.schedule_id == appointment_record.schedule_id
         ).first()
 
         if not room_day:
@@ -67,11 +77,10 @@ class QueueService:
             "estimated_wait_time": estimated_wait_time,
         }
 
-    async def call_next(self, room_id: UUID, called_ticket_sequence: int, current_date: date):
+    async def call_next(self, schedule_id: UUID, called_ticket_sequence: int):
         # 1. Update current_called_sequence in RoomDay
         room_day = self.queue_crud.update_current_called_sequence(
-            room_id=room_id,
-            current_date=current_date,
+            schedule_id=schedule_id,
             called_ticket_sequence=called_ticket_sequence
         )
 
@@ -83,8 +92,7 @@ class QueueService:
 
         # 3. Query CHECKIN to find the patient for the target ticket
         patient_checkin = self.queue_crud.get_checkin_by_ticket_sequence(
-            room_id=room_id,
-            current_date=current_date,
+            schedule_id=schedule_id,
             ticket_sequence=target_ticket_sequence
         )
 
@@ -101,7 +109,7 @@ class QueueService:
             )
             print(f"Notification sent to patient {patient_checkin.patient_id}: {notification_message}")
         else:
-            print(f"No patient found for target ticket sequence {target_ticket_sequence} for room {room_id} on {current_date}.")
+            print(f"No patient found for target ticket sequence {target_ticket_sequence} for schedule {schedule_id}.")
 
     async def handle_no_shows(self):
         """

@@ -35,9 +35,9 @@ async def get_patient_queue_status(
         traceback.print_exc()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.post("/{room_id}/call-next", response_model=dict, status_code=status.HTTP_200_OK)
+@router.post("/schedules/{schedule_id}/call-next", response_model=dict, status_code=status.HTTP_200_OK)
 async def call_next_ticket(
-    room_id: str,
+    schedule_id: UUID,
     request: CallNextRequest,
     db: Session = Depends(get_db),
 ) -> Any:
@@ -48,11 +48,10 @@ async def call_next_ticket(
     try:
         queue_service = QueueService(db)
         await queue_service.call_next(
-            room_id=room_id,
-            called_ticket_sequence=request.called_ticket_sequence,
-            current_date=date.today()
+            schedule_id=schedule_id,
+            called_ticket_sequence=request.called_ticket_sequence
         )
-        return {"message": f"Ticket {request.called_ticket_sequence} called for room {room_id}. Queue updated."}
+        return {"message": f"Ticket {request.called_ticket_sequence} called for schedule {schedule_id}. Queue updated."}
     except HTTPException as e:
         raise e
     except Exception as e:
