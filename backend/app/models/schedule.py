@@ -19,6 +19,7 @@ class Schedule(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     leave_request = relationship("LeaveRequest", back_populates="schedule", uselist=False, cascade="all, delete-orphan")
+    appointments = relationship("Appointment", back_populates="schedule")
 
     def __repr__(self):
         return f"<Schedule {self.schedule_id} doctor={self.doctor_id} date={self.date} period={self.time_period}>"
