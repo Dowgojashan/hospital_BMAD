@@ -19,13 +19,17 @@ const DoctorClinicManagementPage = () => {
   const [queueStatus, setQueueStatus] = useState({}); // {schedule_id: {current_number, waiting_count, estimated_wait_time}}
 
   useEffect(() => {
-    if (user && user.doctor_id) {
+    if (user && user.id) {
       loadTodaySchedules();
       // Set up polling for queue status
       const interval = setInterval(loadQueueStatusForAllSchedules, 10000); // Poll every 10 seconds
       return () => clearInterval(interval);
+    } else {
+      // If user or doctor_id is not available, ensure loading state is eventually false
+      setLoading(false);
+      setMessage('無法載入診間管理資訊，請確認您已登入為醫生。');
     }
-  }, [user]);
+  }, [user?.id]); // Changed dependency to user?.id
 
   const loadTodaySchedules = async () => {
     setLoading(true);
@@ -33,7 +37,7 @@ const DoctorClinicManagementPage = () => {
       const today = format(new Date(), 'yyyy-MM-dd');
       const response = await api.get(`/api/v1/doctor/schedules`, {
         params: {
-          doctor_id: user.doctor_id,
+          doctor_id: user.id,
           date_str: today,
         },
       });
@@ -82,10 +86,12 @@ const DoctorClinicManagementPage = () => {
     setLoading(true);
     try {
       await api.post(`/api/v1/doctor/schedules/${scheduleId}/open-clinic`);
+      alert('診間已開診！');
       setMessage('診間已開診！');
       loadTodaySchedules(); // Reload schedules to update status
     } catch (error) {
       console.error('開診失敗:', error);
+      alert('開診失敗，請稍後再試。');
       setMessage('開診失敗，請稍後再試。');
     } finally {
       setLoading(false);
@@ -96,10 +102,12 @@ const DoctorClinicManagementPage = () => {
     setLoading(true);
     try {
       await api.post(`/api/v1/doctor/schedules/${scheduleId}/close-clinic`);
+      alert('診間已關診！');
       setMessage('診間已關診！');
       loadTodaySchedules(); // Reload schedules to update status
     } catch (error) {
       console.error('關診失敗:', error);
+      alert('關診失敗，請稍後再試。');
       setMessage('關診失敗，請稍後再試。');
     } finally {
       setLoading(false);
@@ -110,10 +118,12 @@ const DoctorClinicManagementPage = () => {
     setLoading(true);
     try {
       await api.post(`/api/v1/doctor/schedules/${scheduleId}/call-next-patient`);
+      alert('已叫號下一位病患！');
       setMessage('已叫號下一位病患！');
       loadTodaySchedules(); // Reload schedules to update status
     } catch (error) {
       console.error('叫號失敗:', error);
+      alert('叫號失敗，請稍後再試。');
       setMessage('叫號失敗，請稍後再試。');
     } finally {
       setLoading(false);
@@ -158,19 +168,21 @@ const DoctorClinicManagementPage = () => {
 
               return (
                 <div key={schedule.schedule_id} className="schedule-item">
-                  <div className="schedule-info">
-                    <h4>{TIME_PERIOD_OPTIONS[schedule.time_period]}</h4>
-                    <p>預約人數: {schedule.booked_patients} / {schedule.max_patients}</p>
-                    <p>診間狀態: <strong>{currentQueueStatus.clinic_status}</strong></p>
-                  </div>
-                  <div className="queue-info">
-                    <p>目前叫號: {currentQueueStatus.current_number}</p>
-                    <p>前方等待: {currentQueueStatus.waiting_count} 人</p>
-                    <p>預估等待: {currentQueueStatus.estimated_wait_time} 分鐘</p>
+                  <div className="schedule-details">
+                    <div className="schedule-info">
+                      <h4>{TIME_PERIOD_OPTIONS[schedule.time_period]}</h4>
+                      <p>預約人數: {schedule.booked_patients} / {schedule.max_patients}</p>
+                      <p>診間狀態: <strong>{currentQueueStatus.clinic_status}</strong></p>
+                    </div>
+                    <div className="queue-info">
+                      <p>目前叫號: {currentQueueStatus.current_number}</p>
+                      <p>前方等待: {currentQueueStatus.waiting_count} 人</p>
+                      <p>預估等待: {currentQueueStatus.estimated_wait_time} 分鐘</p>
+                    </div>
                   </div>
                   <div className="schedule-actions">
                     {!isClinicOpen ? (
-                      <button className="btn btn-success" onClick={() => handleOpenClinic(schedule.schedule_id)}>開診</button>
+                      <button className="btn btn-dark" onClick={() => handleOpenClinic(schedule.schedule_id)}>開診</button>
                     ) : (
                       <>
                         <button className="btn btn-primary" onClick={() => handleCallNextPatient(schedule.schedule_id)}>叫號</button>
@@ -189,12 +201,6 @@ const DoctorClinicManagementPage = () => {
       <div className="card">
         <h3>候診病患列表</h3>
         <p>此處將顯示已報到並等待看診的病患列表。</p>
-      </div>
-
-      {/* TODO: 病歷管理 */}
-      <div className="card">
-        <h3>病歷管理</h3>
-        <p>此處將提供病患病歷的增刪改查功能。</p>
       </div>
     </div>
   );

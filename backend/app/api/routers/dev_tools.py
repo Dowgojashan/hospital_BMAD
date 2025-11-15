@@ -66,7 +66,7 @@ async def trigger_auto_clinic_open(
             if booking_window["start_booking"] <= now <= booking_window["end_booking"]:
                 try:
                     # 檢查 RoomDay 是否已存在
-                    room_day = crud_room_day.get_by_room_id_and_date(db, room_id=doctor_id, date=today)
+                    room_day = crud_room_day.room_day.get_by_room_id_and_date(db, room_id=doctor_id, date=today)
                     
                     if not room_day:
                         # 如果不存在，則創建新的 RoomDay 記錄
@@ -76,7 +76,7 @@ async def trigger_auto_clinic_open(
                             next_sequence=1,
                             current_called_sequence=0 # 初始化為0
                         )
-                        crud_room_day.create(db, obj_in=room_day_create)
+                        crud_room_day.room_day.create(db, obj_in=room_day_create)
                         opened_clinics.append(f"Dr. {doctor_id} - {time_period_str} (新開)")
                         logger.info(f"成功為 Dr. {doctor_id} - {time_period_str} 創建 RoomDay 記錄。")
                     else:
