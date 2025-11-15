@@ -3,8 +3,7 @@ from datetime import date
 from pydantic import BaseModel, Field
 
 class RoomDayBase(BaseModel):
-    room_id: uuid.UUID
-    date: date
+    schedule_id: uuid.UUID
     next_sequence: int = Field(default=1)
     current_called_sequence: int | None = None
 

@@ -120,16 +120,13 @@ async def open_clinic(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能開診今日的班表。")
 
     try:
-        room_id = current_doctor.doctor_id # 診間ID就是醫生ID
-        today = date.today()
-        print(f"DEBUG: Checking RoomDay for room_id={room_id}, date={today}")
-        room_day = crud_room_day.room_day.get_by_room_id_and_date(db, room_id=room_id, date=today)
+        print(f"DEBUG: Checking RoomDay for schedule_id={schedule_id}")
+        room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
         
         if not room_day:
             print(f"DEBUG: RoomDay not found. Creating new RoomDay.")
             room_day_create = RoomDayCreate(
-                room_id=room_id,
-                date=today,
+                schedule_id=schedule_id,
                 next_sequence=1,
                 current_called_sequence=0
             )
@@ -145,7 +142,7 @@ async def open_clinic(
             print(f"DEBUG: Existing RoomDay updated.")
 
         # 更新 Schedule 狀態為 'in_progress' 或 'open'
-        crud_schedule.update_schedule_status(db, schedule_id=schedule_id, new_status="open") # 假設有這個函數
+        crud_schedule.update_schedule_status(db, schedule_id=schedule_id, new_status="open")
         
         return {"message": f"診間 {schedule_id} 已成功開診。"}
     except Exception as e:
@@ -170,20 +167,13 @@ async def close_clinic(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能關診今日的班表。")
 
     try:
-        room_id = current_doctor.doctor_id
-        today = date.today()
-        room_day = crud_room_day.room_day.get_by_room_id_and_date(db, room_id=room_id, date=today)
+        room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
         
         if room_day:
-            # 可以將 RoomDay 標記為非活躍，而不是刪除，以便保留歷史數據
-            # 例如，添加一個 is_active 字段或 clinic_status 字段
-            # For now, let's just ensure it exists and perhaps reset current_called_sequence
-            room_day.current_called_sequence = room_day.next_sequence -1 # 假設關診時叫號到最後一位
-            db.add(room_day)
+            db.delete(room_day)
             db.commit()
-            db.refresh(room_day)
         
-        crud_schedule.update_schedule_status(db, schedule_id=schedule_id, new_status="closed") # 假設有這個函數
+        crud_schedule.update_schedule_status(db, schedule_id=schedule_id, new_status="closed")
 
         return {"message": f"診間 {schedule_id} 已成功關診。"}
     except Exception as e:
@@ -206,9 +196,7 @@ async def get_doctor_schedule_queue_status(
     if schedule.date != date.today():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能查詢今日班表的候診資訊。")
 
-    room_id = current_doctor.doctor_id
-    today = date.today()
-    room_day = crud_room_day.room_day.get_by_room_id_and_date(db, room_id=room_id, date=today)
+    room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
 
     if not room_day:
         # 如果 RoomDay 不存在，表示診間未開診
@@ -256,9 +244,7 @@ async def call_next_patient(
     if schedule.date != date.today():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能叫號今日班表的病患。")
 
-    room_id = current_doctor.doctor_id
-    today = date.today()
-    room_day = crud_room_day.room_day.get_by_room_id_and_date(db, room_id=room_id, date=today)
+    room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
 
     if not room_day:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="診間尚未開診，無法叫號。")
@@ -290,9 +276,7 @@ async def get_waiting_patients(
     if schedule.date != date.today():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能查詢今日班表的候診病患。")
 
-    room_id = current_doctor.doctor_id
-    today = date.today()
-    room_day = crud_room_day.room_day.get_by_room_id_and_date(db, room_id=room_id, date=today)
+    room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
 
     if not room_day:
         return [] # 如果診間未開診，則沒有候診病患
