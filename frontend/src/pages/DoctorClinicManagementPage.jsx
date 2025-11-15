@@ -89,6 +89,7 @@ const DoctorClinicManagementPage = () => {
       alert('診間已開診！');
       setMessage('診間已開診！');
       loadTodaySchedules(); // Reload schedules to update status
+      loadQueueStatusForAllSchedules(); // Reload queue status
     } catch (error) {
       console.error('開診失敗:', error);
       alert('開診失敗，請稍後再試。');
@@ -105,6 +106,7 @@ const DoctorClinicManagementPage = () => {
       alert('診間已關診！');
       setMessage('診間已關診！');
       loadTodaySchedules(); // Reload schedules to update status
+      loadQueueStatusForAllSchedules(); // Reload queue status
     } catch (error) {
       console.error('關診失敗:', error);
       alert('關診失敗，請稍後再試。');
@@ -121,6 +123,7 @@ const DoctorClinicManagementPage = () => {
       alert('已叫號下一位病患！');
       setMessage('已叫號下一位病患！');
       loadTodaySchedules(); // Reload schedules to update status
+      loadQueueStatusForAllSchedules(); // Reload queue status
     } catch (error) {
       console.error('叫號失敗:', error);
       alert('叫號失敗，請稍後再試。');
