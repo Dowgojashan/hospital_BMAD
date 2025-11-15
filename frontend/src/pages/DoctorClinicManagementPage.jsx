@@ -11,6 +11,19 @@ const TIME_PERIOD_OPTIONS = {
   "night": "夜間診",
 };
 
+const getTranslatedStatus = (status) => {
+  switch (status) {
+    case 'checked_in':
+      return '已報到';
+    case 'no_show':
+      return '未到診';
+    case 'seen':
+      return '已看診';
+    default:
+      return status;
+  }
+};
+
 const DoctorClinicManagementPage = () => {
   const user = useAuthStore((s) => s.user);
   const [todaySchedules, setTodaySchedules] = useState([]);
@@ -191,6 +204,28 @@ const DoctorClinicManagementPage = () => {
     }
   };
 
+  const handleReCheckIn = async (scheduleId, checkinId) => {
+    if (!window.confirm('確定要為此病患進行補報到嗎？')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post(`/api/v1/doctor/schedules/${scheduleId}/checkins/${checkinId}/re-check-in`);
+      alert('病患已成功補報到！');
+      setMessage('病患已成功補報到！');
+      loadQueueStatusForAllSchedules(); // Reload queue status
+      loadWaitingPatientsForAllSchedules(); // Reload waiting patients
+    } catch (error) {
+      console.error('補報到失敗:', error);
+      alert('補報到失敗，請稍後再試。');
+      setMessage('補報到失敗，請稍後再試。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   if (loading) {
     return <div className="container">載入中...</div>;
   }
@@ -272,13 +307,18 @@ const DoctorClinicManagementPage = () => {
                     {waitingPatients[schedule.schedule_id].map((patient, index) => (
                       <li key={index} className="waiting-patient-item">
                         <div className="patient-info">
+                          <span className={`status-label status-${patient.status}`}>{getTranslatedStatus(patient.status)}</span>
                           <span>號碼牌: {patient.ticket_number}</span>
                           <span>姓名: {patient.patient_name}</span>
                           <span>報到時間: {new Date(patient.checkin_time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                         <div className="patient-actions">
                           <button className="btn btn-info btn-sm" onClick={() => handleMedicalRecord(patient.patient_id)}>病歷管理</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleMarkNoShow(schedule.schedule_id, patient.checkin_id)}>未到</button>
+                          {patient.status === 'no_show' ? (
+                            <button className="btn btn-success btn-sm" onClick={() => handleReCheckIn(schedule.schedule_id, patient.checkin_id)}>補報到</button>
+                          ) : (
+                            <button className="btn btn-danger btn-sm" onClick={() => handleMarkNoShow(schedule.schedule_id, patient.checkin_id)}>未到</button>
+                          )}
                         </div>
                       </li>
                     ))}

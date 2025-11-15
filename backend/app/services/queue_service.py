@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import date, datetime, timedelta
 from uuid import UUID
 
@@ -171,14 +171,17 @@ class QueueService:
         return {"message": "病患已標記為未到。"}
 
     async def re_check_in(self, checkin_id: UUID):
-        checkin = self.db.query(Checkin).filter(Checkin.checkin_id == checkin_id).first()
+        checkin = self.db.query(Checkin).options(joinedload(Checkin.appointment)).filter(Checkin.checkin_id == checkin_id).first()
         if not checkin:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="報到記錄未找到。")
         
+        if not checkin.appointment: # Ensure appointment is loaded
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="報到記錄的預約資訊未載入。")
+
         if checkin.status != "no_show":
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="病患未被標記為未到，無法補報到。")
 
-        room_day = self.db.query(RoomDay).filter(RoomDay.schedule_id == checkin.schedule_id).first()
+        room_day = self.db.query(RoomDay).filter(RoomDay.schedule_id == checkin.appointment.schedule_id).first()
         if not room_day:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="診間尚未開放或已關閉。")
 
@@ -189,7 +192,7 @@ class QueueService:
 
         # Get active waiting patients (excluding the re-checking-in patient's old sequence if it was still active)
         active_waiting_patients = self.db.query(Checkin).filter(
-            Checkin.schedule_id == checkin.schedule_id,
+            Checkin.appointment.has(Appointment.schedule_id == checkin.appointment.schedule_id),
             Checkin.status == "checked_in",
             Checkin.ticket_sequence > room_day.current_called_sequence,
             Checkin.checkin_id != checkin_id # Exclude the current patient from the list for insertion logic

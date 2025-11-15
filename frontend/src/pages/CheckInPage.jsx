@@ -74,7 +74,7 @@ const CheckInPage = () => {
       const response = await api.get('/api/v1/patient/appointments');
       const today = new Date().toISOString().split('T')[0];
       const todayAppointments = response.data.filter(
-        (apt) => apt.date === today && ['confirmed', 'scheduled', 'checked_in'].includes(apt.status)
+        (apt) => apt.date === today && ['confirmed', 'scheduled', 'checked_in', 'no_show'].includes(apt.status)
       );
       setAppointments(todayAppointments);
     } catch (error) {
@@ -167,14 +167,18 @@ const CheckInPage = () => {
                     <strong>{apt.doctor_name}</strong>
                     <p>{apt.specialty} - {apt.time_period}</p>
                   </div>
-                  <span className="badge badge-info">{apt.status === 'checked_in' ? '已報到' : '未報到'}</span>
+                  <span className="badge badge-info">
+                    {apt.status === 'checked_in' ? '已報到' : apt.status === 'no_show' ? '未到診' : '未報到'}
+                  </span>
                 </div>
               ))}
             </div>
 
             {selectedAppointment && (
               <div className="checkin-actions">
-                {selectedAppointment.status !== 'checked_in' && !isSuspended && (
+                {selectedAppointment.status === 'no_show' ? (
+                  <p className="text-danger">您已被標記為未到診，請聯繫診所進行補報到。</p>
+                ) : selectedAppointment.status !== 'checked_in' && !isSuspended ? (
                   <button
                     className="btn btn-primary btn-block"
                     onClick={handleOnlineCheckIn}
@@ -182,8 +186,7 @@ const CheckInPage = () => {
                   >
                     {loading ? '報到中...' : '線上報到'}
                   </button>
-                )}
-                {selectedAppointment.status === 'checked_in' && (
+                ) : selectedAppointment.status === 'checked_in' && (
                   <p className="text-success">✓ 已報到</p>
                 )}
               </div>

@@ -9,6 +9,7 @@ class CheckinBase(BaseModel):
     checkin_method: str | None = None # "onsite", "online"
     ticket_sequence: int | None = None
     ticket_number: str | None = None
+    status: str = "checked_in" # New status field with default
     cancelled_by: uuid.UUID | None = None
     cancel_reason: str | None = None
 

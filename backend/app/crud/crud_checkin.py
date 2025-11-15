@@ -17,6 +17,7 @@ class CRUDCheckin:
             checkin_method=obj_in.checkin_method,
             ticket_sequence=obj_in.ticket_sequence,
             ticket_number=obj_in.ticket_number,
+            status=obj_in.status, # Add status field
             cancelled_by=obj_in.cancelled_by,
             cancel_reason=obj_in.cancel_reason
         )

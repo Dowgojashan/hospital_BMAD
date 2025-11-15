@@ -296,7 +296,9 @@ async def get_waiting_patients(
                     "ticket_number": checkin.ticket_number,
                     "ticket_sequence": checkin.ticket_sequence,
                     "checkin_time": checkin.checkin_time,
-                    "appointment_id": checkin.appointment_id
+                    "appointment_id": checkin.appointment_id,
+                    "checkin_id": checkin.checkin_id,
+                    "status": checkin.status # Add status here
                 })
     
     waiting_list.sort(key=lambda x: x["ticket_sequence"])
@@ -352,4 +354,6 @@ async def re_check_in_patient(
     except HTTPException as e:
         raise e
     except Exception as e:
+        import traceback
+        traceback.print_exc() # Print the full traceback to the console
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"補報到失敗: {e}")

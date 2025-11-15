@@ -158,6 +158,89 @@
     background-color: var(--danger-dark-color);
 }
 
+/* Waiting Patients List Specific Styles */
+.waiting-patients-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.waiting-patient-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Vertically align items */
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.waiting-patient-item:last-child {
+    border-bottom: none;
+}
+
+.patient-info {
+    display: flex;
+    flex-direction: row; /* Change to row */
+    flex-grow: 1; /* Allow patient info to take available space */
+    align-items: center; /* Align items vertically in the center */
+    gap: 15px; /* Add gap for spacing */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.patient-info span {
+    /* margin-right: 15px; */ /* Removed as gap handles spacing */
+    color: var(--text-dark);
+}
+
+.patient-actions {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+}
+
+/* Custom button styles for prominence */
+.patient-actions .btn-info {
+    background-color: #007bff; /* A more vibrant blue */
+    color: white;
+    border: none;
+}
+
+.patient-actions .btn-info:hover {
+    background-color: #0056b3;
+}
+
+.patient-actions .btn-danger {
+    background-color: #dc3545; /* Standard red, but ensure it's prominent */
+    color: white;
+    border: none;
+}
+
+.patient-actions .btn-danger:hover {
+    background-color: #c82333;
+}
+
+.status-label {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+    margin-right: 10px;
+    white-space: nowrap; /* Prevent text from wrapping */
+}
+
+.status-checked_in {
+    background-color: #28a745; /* Green */
+}
+
+.status-no_show {
+    background-color: #ffc107; /* Yellow/Orange */
+    color: #343a40; /* Dark text for contrast */
+}
+
+.status-seen {
+    background-color: #6c757d; /* Gray */
+}
+
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .schedule-list {
@@ -171,6 +254,17 @@
 
     .queue-info {
         text-align: left;
+    }
+
+    .waiting-patient-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .patient-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: flex-start;
     }
 }
 
@@ -186,5 +280,10 @@
     .schedule-actions .btn {
         font-size: 0.9rem;
         padding: 10px;
+    }
+
+    .patient-actions .btn {
+        font-size: 0.85rem;
+        padding: 8px 10px;
     }
 }

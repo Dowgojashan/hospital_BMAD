@@ -42,6 +42,15 @@ class CheckinService:
         if not appointment:
             logger.warning(f"報到失敗: 未找到 appointment_id={appointment_id}。")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Appointment not found.")
+        
+        # Prevent online check-in if appointment status is 'no_show'
+        if appointment.status == "no_show":
+            logger.warning(f"報到失敗: 預約 {appointment.appointment_id} 狀態為 'no_show'，無法報到。")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="您已被標記為未到診，請聯繫診所進行補報到。"
+            )
+
         if appointment.patient_id != uuid.UUID(str(patient_id)):
             logger.warning(f"報到失敗: 預約 {appointment_id} 不屬於 patient_id={patient_id}。")
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Appointment does not belong to patient.")
