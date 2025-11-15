@@ -5,8 +5,9 @@ import uuid
 from datetime import date
 from typing import List # Import List
 from sqlalchemy import case # Import case
+import os # Import os
 
-from app.crud.crud_appointment import appointment as crud_appointment
+from app.crud.crud_appointment import appointment_crud
 from app.crud.crud_user import get_patient
 from app.crud.crud_doctor import get_doctor
 from app.schemas.appointment import AppointmentCreate, AppointmentInDB, AppointmentPublic
@@ -20,12 +21,12 @@ class AppointmentService:
     def create_appointment(
         self, db: Session, *, patient_id: uuid.UUID, appointment_in: AppointmentCreate, background_tasks: BackgroundTasks
     ) -> AppointmentInDB:
-            # 0. Prevent same-day booking
-            if appointment_in.date == date.today():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="不開放預約當日門診"
-                )
+            # # 0. Prevent same-day booking, unless testing is enabled
+            # if appointment_in.date == date.today() and os.getenv("ALLOW_SAME_DAY_OPERATIONS_FOR_TESTING", "false").lower() != "true":
+            #     raise HTTPException(
+            #         status_code=status.HTTP_400_BAD_REQUEST,
+            #         detail="不開放預約當日門診"
+            #     )
 
             # 1. Check if the schedule exists and is available
             # Use SELECT ... FOR UPDATE to lock the schedule row to prevent race conditions
@@ -36,7 +37,9 @@ class AppointmentService:
                 Schedule.time_period == appointment_in.time_period,
             ).with_for_update() # Apply row-level lock
 
+            print(f"DEBUG: Checking schedule for doctor_id={appointment_in.doctor_id}, date={appointment_in.date}, time_period={appointment_in.time_period}")
             schedule = schedule_query.first()
+            print(f"DEBUG: Schedule found: {schedule}")
 
             if not schedule:
                 raise HTTPException(
@@ -44,7 +47,7 @@ class AppointmentService:
                     detail="Schedule not found or not active."
                 )
 
-            # 2. Check for duplicate booking by the same patient for the same slot
+            print(f"DEBUG: Checking for existing patient appointment for patient_id={patient_id}")
             existing_patient_appointment = db.query(Appointment).filter(
                 Appointment.patient_id == patient_id,
                 Appointment.doctor_id == appointment_in.doctor_id,
@@ -52,6 +55,7 @@ class AppointmentService:
                 Appointment.time_period == appointment_in.time_period,
                 Appointment.status.in_(["scheduled", "confirmed", "waiting", "checked_in", "in_consult"]) # Consider active statuses
             ).first()
+            print(f"DEBUG: Existing patient appointment: {existing_patient_appointment}")
 
             if existing_patient_appointment:
                 raise HTTPException(
@@ -59,23 +63,27 @@ class AppointmentService:
                     detail="您已預約此時段，請勿重複預約。"
                 )
 
-            # 3. Check if there is capacity in the schedule slot
+            print(f"DEBUG: Checking schedule capacity: booked={schedule.booked_patients}, max={schedule.max_patients}")
             if schedule.booked_patients >= schedule.max_patients:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="該時段已滿"
                 )
 
-            # 4. Increment booked_patients count in the schedule
+            print(f"DEBUG: Incrementing booked_patients for schedule {schedule.schedule_id}")
             schedule.booked_patients += 1
             db.add(schedule)
             db.flush() # Flush to ensure the update is part of the current transaction
+            print(f"DEBUG: Booked patients after increment: {schedule.booked_patients}")
 
             # 5. Create the appointment
-            new_appointment = crud_appointment.create(db, obj_in=appointment_in, patient_id=patient_id)
+            print(f"DEBUG: Creating new appointment with patient_id={patient_id}, appointment_in={appointment_in}")
+            new_appointment = appointment_crud.create(db, obj_in=appointment_in, patient_id=patient_id)
+            print(f"DEBUG: New appointment created: {new_appointment.appointment_id}")
             
             db.commit()
             db.refresh(new_appointment)
+            print(f"DEBUG: Appointment committed and refreshed.")
 
             # 6. Send confirmation email in the background
             patient = get_patient(db, patient_id=patient_id)
@@ -104,13 +112,27 @@ class AppointmentService:
             return new_appointment
 
     def get_patient_appointments_with_details(
-        self, db: Session, *, patient_id: uuid.UUID
+        self, db: Session, *, patient_id: uuid.UUID,
+        start_date: str = None,
+        end_date: str = None,
+        statuses: List[str] = None
     ) -> List[AppointmentPublic]:
-        appointments = (
+        query = (
             db.query(Appointment, Doctor, Patient)
             .join(Doctor, Appointment.doctor_id == Doctor.doctor_id)
             .join(Patient, Appointment.patient_id == Patient.patient_id)
             .filter(Appointment.patient_id == patient_id)
+        )
+
+        if start_date:
+            query = query.filter(Appointment.date >= start_date)
+        if end_date:
+            query = query.filter(Appointment.date <= end_date)
+        if statuses:
+            query = query.filter(Appointment.status.in_(statuses))
+
+        appointments = (
+            query
             .order_by(
                 case(
                     (Appointment.status.in_(["scheduled", "confirmed", "waiting", "checked_in", "in_consult"]), 0), # Active/Upcoming

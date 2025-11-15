@@ -38,7 +38,7 @@ const AdminLeaveManagementPage = () => {
     setError('');
     setSelectedRequests([]); // Clear selections on refresh
     try {
-      const response = await api.get('/api/v1/admin/leave-requests');
+      const response = await api.get('/api/v1/leave-requests');
       setLeaveRequests(response.data);
     } catch (err) {
       setError('無法載入待審核的停診申請。');
@@ -68,7 +68,7 @@ const AdminLeaveManagementPage = () => {
     }
 
     try {
-      await api.put(`/api/v1/admin/leave-requests/${scheduleId}/${action}`);
+      await api.put(`/api/v1/leave-requests/${scheduleId}/${action}`);
       setModalMessage(successMessage);
       setShowSuccessModal(true);
       fetchLeaveRequests(); // Refresh the list after action
@@ -125,7 +125,7 @@ const AdminLeaveManagementPage = () => {
     try {
       // Process requests sequentially or in parallel
       const results = await Promise.allSettled(
-        selectedRequests.map(id => api.put(`/api/v1/admin/leave-requests/${id}/${action}`))
+        selectedRequests.map(id => api.put(`/api/v1/leave-requests/${id}/${action}`))
       );
 
       const failedRequests = results.filter(result => result.status === 'rejected');

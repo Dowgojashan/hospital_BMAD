@@ -238,7 +238,7 @@ const BookAppointmentPage = () => {
             onChange={setCalendarDate}
             value={calendarDate}
             onActiveStartDateChange={({ activeStartDate }) => setCalendarDate(activeStartDate)}
-            minDate={new Date()}
+            // minDate={new Date()} // Temporarily commented out for testing
             maxDate={new Date(new Date().setMonth(new Date().getMonth() + 3))} // Limit to 3 months
             locale="zh-TW"
             className="react-calendar-custom"

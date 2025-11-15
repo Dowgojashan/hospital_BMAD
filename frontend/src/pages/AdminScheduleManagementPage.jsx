@@ -113,11 +113,11 @@ const AdminScheduleManagementPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (!editingSchedule && new Date(formData.date) < new Date()) {
-      setMessage('日期不能是過去的日期。');
-      setLoading(false);
-      return;
-    }
+    // if (!editingSchedule && new Date(formData.date) < new Date()) {
+    //   setMessage('日期不能是過去的日期。');
+    //   setLoading(false);
+    //   return;
+    // }
 
     try {
       if (editingSchedule) {
@@ -538,15 +538,14 @@ const AdminScheduleManagementPage = () => {
 
       <div className="card">
         <h3>班表日曆</h3>
-        <Calendar
-          onChange={setCalendarDate}
-          value={calendarDate}
-          onActiveStartDateChange={({ activeStartDate }) => setCalendarDate(activeStartDate)}
-          minDate={new Date()}
-          maxDate={new Date(new Date().setFullYear(new Date().getFullYear() + 1))}
-          locale="zh-TW"
-          className="react-calendar-custom"
-          tileContent={({ date, view }) => {
+                  <Calendar
+                    onChange={setCalendarDate}
+                    value={calendarDate}
+                    onActiveStartDateChange={({ activeStartDate }) => setCalendarDate(activeStartDate)}
+                    // minDate={new Date()} // Temporarily commented out for testing
+                    maxDate={new Date(new Date().setFullYear(new Date().getFullYear() + 1))}
+                    locale="zh-TW"
+                    className="react-calendar-custom"          tileContent={({ date, view }) => {
             if (view === 'month') {
               const daySchedules = schedules.filter(
                 (schedule) =>

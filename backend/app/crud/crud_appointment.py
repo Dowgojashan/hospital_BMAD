@@ -7,7 +7,7 @@ from datetime import date
 from app.models.appointment import Appointment
 from app.schemas.appointment import AppointmentCreate, AppointmentUpdate
 
-class CRUDAppointment:
+class AppointmentCRUD:
     def create(self, db: Session, *, obj_in: AppointmentCreate, patient_id: uuid.UUID) -> Appointment:
         db_obj = Appointment(
             patient_id=patient_id,
@@ -42,6 +42,15 @@ class CRUDAppointment:
         db.refresh(db_obj)
         return db_obj
 
+    def update_status(self, db: Session, *, appointment_id: uuid.UUID, new_status: str) -> Optional[Appointment]:
+        db_obj = db.query(Appointment).filter(Appointment.appointment_id == appointment_id).first()
+        if db_obj:
+            db_obj.status = new_status
+            db.add(db_obj)
+            db.commit()
+            db.refresh(db_obj)
+        return db_obj
+
     def remove(self, db: Session, *, appointment_id: uuid.UUID) -> Optional[Appointment]:
         obj = db.query(Appointment).filter(Appointment.appointment_id == appointment_id).first()
         if obj:
@@ -49,4 +58,4 @@ class CRUDAppointment:
             db.commit()
         return obj
 
-appointment = CRUDAppointment()
+appointment_crud = AppointmentCRUD()

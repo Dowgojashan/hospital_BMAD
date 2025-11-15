@@ -55,7 +55,7 @@ def register_patient(
     return patient
 
 
-@router.post("/auth/token", response_model=Token)
+@router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     logger.info("login_for_access_token: start")
     auth = crud_user.authenticate_user(db, form_data.username, form_data.password)

@@ -73,7 +73,7 @@ const DoctorSchedulesPage = () => {
         params.time_period = selectedTimePeriod;
       }
       console.log(`DoctorSchedulesPage: Fetching schedules for doctor ${user.id} with params:`, params);
-      const response = await api.get(`/api/v1/doctors/me/schedules`, { params });
+      const response = await api.get(`/api/v1/doctor/schedules`, { params });
       console.log("DoctorSchedulesPage: API response:", response.data);
       setSchedules(response.data);
       if (response.data.length === 0) {

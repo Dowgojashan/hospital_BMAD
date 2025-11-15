@@ -1,16 +1,14 @@
 import uuid
 from sqlalchemy import Column, String, Date, DateTime, func, Boolean
-from sqlalchemy.dialects.postgresql import UUID
-
 from sqlalchemy.orm import relationship
 
-from ..db.base import Base
+from ..db.base import Base, UUIDType
 
 
 class Patient(Base):
     __tablename__ = "PATIENT"
 
-    patient_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    patient_id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
     card_number = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)

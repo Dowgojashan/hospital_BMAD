@@ -12,7 +12,7 @@ from app.models.patient import Patient # Import Patient model
 from app.schemas.admin import AdminCreate, AdminUpdate, AdminPublic
 from app.schemas.doctor import DoctorCreate, DoctorUpdate, DoctorPublic
 from app.schemas.patient import PatientCreate, PatientUpdate, PatientPublic # Import Patient schemas
-from app.crud import crud_admin, crud_doctor, crud_user # Import crud_user
+from app.crud import crud_admin, crud_doctor, crud_user, crud_schedule, crud_leave_request # Import crud_leave_request
 
 router = APIRouter()
 
@@ -226,3 +226,41 @@ def delete_patient_endpoint(
     if not patient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
     return
+
+
+@router.get("/leave-requests", response_model=List[dict]) # Assuming a dict response for now
+def list_leave_requests_endpoint(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    """
+    List all pending leave requests for admin management.
+    """
+    leave_requests = crud_schedule.list_pending_leave_requests(db)
+    return leave_requests
+
+
+@router.put("/leave-requests/{schedule_id}/approve", status_code=status.HTTP_200_OK)
+def approve_leave_request_endpoint(
+    schedule_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    """
+    Admin approves a leave request.
+    """
+    crud_leave_request.approve_leave_request(db, schedule_id=schedule_id)
+    return {"message": "停診申請已核准。"}
+
+
+@router.put("/leave-requests/{schedule_id}/reject", status_code=status.HTTP_200_OK)
+def reject_leave_request_endpoint(
+    schedule_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    """
+    Admin rejects a leave request.
+    """
+    crud_leave_request.reject_leave_request(db, schedule_id=schedule_id)
+    return {"message": "停診申請已拒絕。"}

@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import './AppointmentsPage.css';
 import api from '../api/axios'; // Use existing axios instance
 
+// Helper function to extract and format error messages
+const getErrorMessage = (error, defaultMessage) => {
+  if (error.response && error.response.data && error.response.data.detail) {
+    const detail = error.response.data.detail;
+    if (Array.isArray(detail)) {
+      // FastAPI validation errors are often an array of objects
+      return detail.map(d => d.msg).join('; ');
+    } else if (typeof detail === 'string') {
+      return detail;
+    } else if (typeof detail === 'object' && detail.msg) {
+      return detail.msg;
+    }
+  }
+  return defaultMessage;
+};
+
 const TIME_PERIOD_OPTIONS = [
   { value: "morning", label: "上午診" },
   { value: "afternoon", label: "下午診" },
@@ -51,7 +67,7 @@ const AppointmentsPage = () => {
       setAppointments(response.data);
     } catch (error) {
       console.error('載入預約失敗:', error);
-      setModalMessage(error.response?.data?.detail || '載入預約失敗，請稍後再試。');
+      setModalMessage(getErrorMessage(error, '載入預約失敗，請稍後再試。'));
       setShowErrorModal(true);
     } finally {
       setLoading(false);
@@ -75,7 +91,7 @@ const AppointmentsPage = () => {
       loadAppointments(); // Reload appointments to reflect the cancellation
     } catch (error) {
       console.error('取消預約失敗:', error);
-      setModalMessage(error.response?.data?.detail || '取消預約失敗，請稍後再試。');
+      setModalMessage(getErrorMessage(error, '取消預約失敗，請稍後再試。'));
       setShowErrorModal(true);
     } finally {
       setLoading(false);

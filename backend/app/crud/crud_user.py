@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, Tuple, List
 from fastapi import HTTPException, status # Import status
 import uuid # Import uuid
-from datetime import datetime # Import datetime
+from datetime import datetime, date # Import datetime and date
 
 from app.models import Admin, Doctor, Patient
 from app.schemas.patient import PatientCreate, PatientUpdate # Import PatientUpdate
@@ -139,4 +139,13 @@ def delete_patient(db: Session, patient_id: uuid.UUID) -> Optional[Patient]:
         return None
     db.delete(db_patient)
     db.commit()
+    return db_patient
+
+def update_patient_suspended_until(db: Session, patient_id: uuid.UUID, suspended_until: Optional[date]) -> Optional[Patient]:
+    db_patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
+    if db_patient:
+        db_patient.suspended_until = suspended_until
+        db.add(db_patient)
+        db.commit()
+        db.refresh(db_patient)
     return db_patient

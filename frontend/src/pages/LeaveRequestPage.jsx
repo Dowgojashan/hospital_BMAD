@@ -53,11 +53,19 @@ const LeaveRequestPage = () => {
     setLoading(true);
     try {
       const params = { month: calendarDate.getMonth() + 1, year: calendarDate.getFullYear() };
-      const response = await api.get('/api/v1/doctors/me/schedules', { params });
+      const response = await api.get('/api/v1/doctor/schedules', { params });
       setSchedules(response.data);
     } catch (error) {
       console.error('載入班表失敗:', error);
-      setModalMessage(error.response?.data?.detail || '載入班表失敗，請稍後再試。');
+      let errorMessage = '載入班表失敗，請稍後再試。';
+      if (error.response && error.response.data && error.response.data.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map(err => err.msg).join('; ');
+        } else if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        }
+      }
+      setModalMessage(errorMessage);
       setShowErrorModal(true);
     } finally {
       setLoading(false);
@@ -90,11 +98,12 @@ const LeaveRequestPage = () => {
           return;
         }
         const payload = {
+          schedule_id: selectedScheduleSlot.schedule_id, // Add schedule_id
           date: selectedScheduleSlot.date,
           time_period: selectedScheduleSlot.time_period,
           reason: reason,
         };
-        await api.post('/api/v1/doctors/me/leave-requests', payload);
+        await api.post('/api/v1/doctor/me/leave-requests', payload);
         setModalMessage('停診申請已送出，該時段已標記為不可預約。');
       } else { // Range leave
         if (endDate < startDate) {
@@ -109,7 +118,7 @@ const LeaveRequestPage = () => {
           time_periods: ['morning', 'afternoon', 'night'], // Always request for the whole day
           reason: reason,
         };
-        await api.post('/api/v1/doctors/me/leave-requests/range', payload);
+        await api.post('/api/v1/doctor/me/leave-requests/range', payload);
         setModalMessage('連續停診申請已送出，相關時段已標記為不可預約。');
       }
       
@@ -118,7 +127,15 @@ const LeaveRequestPage = () => {
       if (leaveType === 'single') loadSchedules();
     } catch (error) {
       console.error('停診申請失敗:', error);
-      setModalMessage(error.response?.data?.detail || '停診申請失敗，請稍後再試。');
+      let errorMessage = '停診申請失敗，請稍後再試。';
+      if (error.response && error.response.data && error.response.data.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map(err => err.msg).join('; ');
+        } else if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        }
+      }
+      setModalMessage(errorMessage);
       setShowErrorModal(true);
     } finally {
       setLoading(false);

@@ -8,32 +8,40 @@ import './CheckInPage.css';
 import api from '../api/axios'; // Use existing axios instance
 import { useAuthStore } from '../store/authStore'; // Use existing auth store
 
-// Mock data for appointments (temporary)
-const mockAppointments = [
-  {
-    appointment_id: 'apt001',
-    doctor_name: 'Dr. Chen',
-    specialty: 'Family Medicine',
-    date: new Date().toISOString().split('T')[0], // Today's date
-    time_period: '09:00-09:30',
-    status: 'scheduled',
-  },
-  {
-    appointment_id: 'apt002',
-    doctor_name: 'Dr. Lin',
-    specialty: 'Pediatrics',
-    date: new Date().toISOString().split('T')[0], // Today's date
-    time_period: '14:00-14:30',
-    status: 'confirmed',
-  },
-];
+// Helper function to extract and format error messages
+const getErrorMessage = (error, defaultMessage) => {
+  if (error.response && error.response.data && error.response.data.detail) {
+    const detail = error.response.data.detail;
+    if (Array.isArray(detail)) {
+      // FastAPI validation errors are often an array of objects
+      return detail.map(d => d.msg).join('; ');
+    } else if (typeof detail === 'string') {
+      return detail;
+    } else if (typeof detail === 'object' && detail.msg) {
+      return detail.msg;
+    }
+  }
+  return defaultMessage;
+};
 
-// Mock data for queue status (temporary)
-const mockQueueStatus = {
-  current_number: 'A005',
-  my_position: 'A007',
-  waiting_count: 2,
-  estimated_wait_time: 15,
+// Generic Message Modal Component
+const MessageModal = ({ show, onClose, message, type }) => {
+  if (!show) {
+    return null;
+  }
+
+  const modalTitle = type === 'success' ? '操作成功！' : '操作失敗！';
+  const titleClass = type === 'success' ? 'modal-title-success' : 'modal-title-error';
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2 className={titleClass}>{modalTitle}</h2>
+        <p>{message}</p>
+        <button onClick={onClose} className={`btn ${type === 'success' ? 'btn-primary' : 'btn-danger'}`}>關閉</button>
+      </div>
+    </div>
+  );
 };
 
 const CheckInPage = () => {
@@ -43,6 +51,11 @@ const CheckInPage = () => {
   const [queueStatus, setQueueStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // States for modals
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState(''); // Generic message for modal
 
   useEffect(() => {
     loadAppointments();
@@ -58,22 +71,16 @@ const CheckInPage = () => {
 
   const loadAppointments = async () => {
     try {
-      // TODO: Integrate with actual API endpoint for fetching patient appointments
-      // const response = await api.get('/api/v1/patient/appointments');
-      // const today = new Date().toISOString().split('T')[0];
-      // const todayAppointments = response.data.filter(
-      //   (apt) => apt.date === today && ['confirmed', 'scheduled'].includes(apt.status)
-      // );
-      // setAppointments(todayAppointments);
-
-      // Using mock data for now
+      const response = await api.get('/api/v1/patient/appointments');
       const today = new Date().toISOString().split('T')[0];
-      const todayAppointments = mockAppointments.filter(
-        (apt) => apt.date === today && ['confirmed', 'scheduled', 'checked_in'].includes(apt.status)
+      const todayAppointments = response.data.filter(
+        (apt) => apt.date === today && ['confirmed', 'scheduled'].includes(apt.status)
       );
       setAppointments(todayAppointments);
     } catch (error) {
       console.error('載入預約失敗:', error);
+      setModalMessage(getErrorMessage(error, '載入預約失敗，請稍後再試。'));
+      setShowErrorModal(true);
     }
   };
 
@@ -81,14 +88,12 @@ const CheckInPage = () => {
     if (!selectedAppointment) return;
 
     try {
-      // TODO: Integrate with actual API endpoint for getting queue status
-      // const response = await api.get(`/api/v1/checkin/queue/${selectedAppointment.appointment_id}`);
-      // setQueueStatus(response.data);
-
-      // Using mock data for now
-      setQueueStatus(mockQueueStatus);
+      const response = await api.get(`/api/v1/checkin/queue/${selectedAppointment.appointment_id}`);
+      setQueueStatus(response.data);
     } catch (error) {
       console.error('載入候診資訊失敗:', error);
+      setModalMessage(getErrorMessage(error, '載入候診資訊失敗，請稍後再試。'));
+      setShowErrorModal(true);
     }
   };
 
@@ -97,22 +102,30 @@ const CheckInPage = () => {
 
     setError('');
     setLoading(true);
+    setModalMessage('');
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
 
     try {
-      // TODO: Integrate with actual API endpoint for online check-in
-      // await api.post(`/api/v1/checkin/${selectedAppointment.appointment_id}`);
-      alert('報到成功！ (Mock)'); // Mock success
+      await api.post(`/api/v1/checkin/${selectedAppointment.appointment_id}`);
+      setModalMessage('報到成功！');
+      setShowSuccessModal(true);
       loadAppointments();
       loadQueueStatus();
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || '報到失敗 (Mock)';
+      const errorMsg = getErrorMessage(err, '報到失敗，請稍後再試。');
       setError(errorMsg);
-      if (errorMsg.includes('限制') || errorMsg.includes('suspended')) {
-        alert('您的帳號目前限制線上報到，請至現場機台報到');
-      }
+      setModalMessage(errorMsg);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    setShowErrorModal(false);
+    setModalMessage('');
   };
 
   const isSuspended = user?.suspended_until && new Date(user.suspended_until) > new Date();
@@ -203,6 +216,19 @@ const CheckInPage = () => {
           )}
         </>
       )}
+
+      <MessageModal
+        show={showSuccessModal}
+        onClose={handleCloseModal}
+        message={modalMessage}
+        type="success"
+      />
+      <MessageModal
+        show={showErrorModal}
+        onClose={handleCloseModal}
+        message={modalMessage}
+        type="error"
+      />
     </div>
   );
 };

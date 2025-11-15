@@ -5,6 +5,7 @@ import uuid
 from datetime import date, datetime, timedelta
 import calendar
 from fastapi import HTTPException, status
+import os # Import os
 
 from app.models.schedule import Schedule
 from app.models.doctor import Doctor
@@ -13,6 +14,20 @@ from app.schemas.schedule import ScheduleCreate, ScheduleUpdate, ScheduleRecurri
 
 
 def create_schedule(db: Session, schedule_in: ScheduleCreate) -> Schedule:
+    # # Explicitly prevent creating schedules for past dates, unless testing is enabled
+    # if schedule_in.date < date.today() and os.getenv("ALLOW_SAME_DAY_OPERATIONS_FOR_TESTING", "false").lower() != "true":
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="不允許新增過去的班表"
+    #     )
+
+    # # Prevent creating schedules for the current day, unless testing is enabled
+    # if schedule_in.date == date.today() and os.getenv("ALLOW_SAME_DAY_OPERATIONS_FOR_TESTING", "false").lower() != "true":
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="不允許新增當天的班表"
+    #     )
+
     # Check for existing schedule for the same doctor, date, and time_period
     existing_schedule = (
         db.query(Schedule)
@@ -91,11 +106,18 @@ def delete_schedule(db: Session, schedule_id: uuid.UUID) -> Optional[Schedule]:
     return db_schedule
 
 
-def list_schedules(db: Session, doctor_ids: Optional[List[uuid.UUID]] = None, month: Optional[int] = None, year: Optional[int] = None, time_period: Optional[str] = None, skip: int = 0, limit: int = 100) -> List[Schedule]:
+def list_schedules(db: Session, doctor_ids: Optional[List[uuid.UUID]] = None, date_str: Optional[str] = None, month: Optional[int] = None, year: Optional[int] = None, time_period: Optional[str] = None, skip: int = 0, limit: int = 100) -> List[Schedule]:
     query = db.query(Schedule)
     if doctor_ids:
         query = query.filter(Schedule.doctor_id.in_(doctor_ids))
-    if month and year:
+    
+    if date_str:
+        try:
+            filter_date = date.fromisoformat(date_str)
+            query = query.filter(Schedule.date == filter_date)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Use YYYY-MM-DD.")
+    elif month and year:
         # Construct date range for the given month and year
         start_date = date(year, month, 1)
         # Calculate the last day of the month
@@ -122,10 +144,12 @@ def list_schedules(db: Session, doctor_ids: Optional[List[uuid.UUID]] = None, mo
     return query.offset(skip).limit(limit).all()
 
 
-def get_doctor_schedules(db: Session, doctor_id: uuid.UUID, month: Optional[int] = None, year: Optional[int] = None, time_period: Optional[str] = None) -> List[dict]:
+def get_doctor_schedules(db: Session, doctor_id: uuid.UUID, filter_date: Optional[date] = None, month: Optional[int] = None, year: Optional[int] = None, time_period: Optional[str] = None) -> List[dict]:
     query = db.query(Schedule, Doctor).join(Doctor, Schedule.doctor_id == Doctor.doctor_id).filter(Schedule.doctor_id == doctor_id)
 
-    if month and year:
+    if filter_date:
+        query = query.filter(Schedule.date == filter_date)
+    elif month and year:
         start_date = date(year, month, 1)
         if month == 12:
             end_date = date(year + 1, 1, 1) - timedelta(days=1)
@@ -237,6 +261,12 @@ def create_recurring_schedules(db: Session, schedule_in: ScheduleRecurringCreate
             # Check if the day matches the recurring day of the week
             # and if it's on or after the start_date
             if temp_date.weekday() == schedule_in.day_of_week and temp_date >= schedule_in.start_date:
+                # # Prevent creating schedules for the current day, unless testing is enabled
+                # if temp_date == date.today() and os.getenv("ALLOW_SAME_DAY_OPERATIONS_FOR_TESTING", "false").lower() != "true":
+                #     raise HTTPException(
+                #         status_code=status.HTTP_400_BAD_REQUEST,
+                #         detail=f"不允許新增當天的班表 (日期: {temp_date})"
+                #     )
                 # Check for existing schedule for the same doctor, date, and time_period
                 existing_schedule = (
                     db.query(Schedule)

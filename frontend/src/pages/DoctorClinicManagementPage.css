@@ -1,0 +1,84 @@
+/* DoctorClinicManagementPage.css */
+
+.schedule-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.schedule-item {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.schedule-item h4 {
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.schedule-info p, .queue-info p {
+    margin: 5px 0;
+    color: var(--text-medium);
+}
+
+.schedule-info strong, .queue-info strong {
+    color: var(--text-dark);
+}
+
+.schedule-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.schedule-actions .btn {
+    flex: 1;
+    padding: 10px 15px;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.schedule-actions .btn-success {
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+}
+
+.schedule-actions .btn-success:hover {
+    background-color: var(--success-dark-color);
+}
+
+.schedule-actions .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.schedule-actions .btn-primary:hover {
+    background-color: var(--primary-dark-color);
+}
+
+.schedule-actions .btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+}
+
+.schedule-actions .btn-danger:hover {
+    background-color: var(--danger-dark-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .schedule-list {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,17 +1,16 @@
 import uuid
 from sqlalchemy import Column, Date, String, DateTime, ForeignKey, func, Integer # Import String, Integer
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
-from ..db.base import Base
+from ..db.base import Base, UUIDType
 
 
 class Schedule(Base):
     __tablename__ = "SCHEDULE"
 
-    schedule_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    doctor_id = Column(UUID(as_uuid=True), ForeignKey("DOCTOR.doctor_id"), nullable=False)
-    recurring_group_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    schedule_id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    doctor_id = Column(UUIDType, ForeignKey("DOCTOR.doctor_id"), nullable=False)
+    recurring_group_id = Column(UUIDType, nullable=True, index=True)
     date = Column(Date, nullable=False)
     time_period = Column(String, nullable=False)
     status = Column(String, nullable=False, default='available', server_default='available')

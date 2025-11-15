@@ -20,6 +20,7 @@ import EmailVerificationPage from './pages/EmailVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResendVerificationPage from './pages/ResendVerificationPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import DoctorClinicManagementPage from './pages/DoctorClinicManagementPage'; // Import DoctorClinicManagementPage
 import { useAuthStore } from './store/authStore'
 import ProtectedAdminRoute from './components/ProtectedAdminRoute'
 import Navbar from './components/Navbar';
@@ -71,6 +72,7 @@ function AppContent() {
         <Route path="/doctor/schedules" element={<ProtectedRoute><DoctorSchedulesPage /></ProtectedRoute>} />
         <Route path="/doctor/records" element={<ProtectedRoute><DoctorRecordsPage /></ProtectedRoute>} />
         <Route path="/doctor/leave" element={<ProtectedRoute><LeaveRequestPage /></ProtectedRoute>} />
+        <Route path="/doctor/clinic-management" element={<ProtectedRoute><DoctorClinicManagementPage /></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} />
         <Route path="/admin/schedules" element={<ProtectedAdminRoute><AdminScheduleManagementPage /></ProtectedAdminRoute>} />
 

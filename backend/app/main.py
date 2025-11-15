@@ -1,32 +1,35 @@
+# backend/app/main.py
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware # Import CORSMiddleware
+from app.api.routers import auth, admin_management, schedules, patient_appointments, queue, doctor_clinic_management, user_profile
+import os
 
-app = FastAPI(
-    title="Hospital BMAD API",
-    description="API for the Hospital BMAD project",
-    version="0.1.0",
-)
+app = FastAPI()
 
-# Set all CORS enabled origins
+origins = [
+    "http://localhost",
+    "http://localhost:5173",  # 您的前端地址
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-from app.api.routers import auth, admin_management, schedules, profile, doctor_schedules, patient_schedules, patient_appointments, admin_leave_management
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
+app.include_router(admin_management.router, prefix="/api/v1", tags=["Admin Management"])
+app.include_router(schedules.router, prefix="/api/v1/schedules", tags=["Schedules"])
+app.include_router(patient_appointments.router, prefix="/api/v1/patient", tags=["Patient"])
+app.include_router(queue.router, prefix="/api/v1", tags=["Queue"])
+app.include_router(doctor_clinic_management.router, prefix="/api/v1", tags=["Doctor Clinic Management"])
+app.include_router(user_profile.router, prefix="/api/v1/profile", tags=["User Profile"])
 
-app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
-app.include_router(admin_management.router, prefix="/api/v1", tags=["admin-management"])
-app.include_router(admin_leave_management.router, prefix="/api/v1/admin", tags=["admin-leave-management"])
-app.include_router(schedules.router, prefix="/api/v1/schedules", tags=["schedules"])
-app.include_router(profile.router, prefix="/api/v1/profile", tags=["profile-management"])
-app.include_router(doctor_schedules.router, prefix="/api/v1/doctors", tags=["doctor-schedules"])
-app.include_router(patient_schedules.router, prefix="/api/v1/patient", tags=["patient-schedules"])
-app.include_router(patient_appointments.router, prefix="/api/v1/patient", tags=["patient-appointments"])
+# 僅在開發環境中包含開發工具路由
+if os.getenv("ENV") == "development":
+    from app.api.routers import dev_tools
+    app.include_router(dev_tools.router, prefix="/api/v1/dev", tags=["Development Tools"])
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the Hospital BMAD API"}
+# ... 其他應用程式邏輯

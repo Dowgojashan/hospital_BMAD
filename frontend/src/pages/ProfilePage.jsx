@@ -119,27 +119,72 @@ const ProfilePage = () => {
 
     try {
       let payload = {};
+      const changedFields = {};
+
+      // Compare formData with originalFormData to send only changed fields
+      for (const key in formData) {
+        // Skip password and confirmPassword for direct comparison
+        if (key === 'password' || key === 'confirmPassword') continue;
+
+        // Special handling for dob, card_number, login_id, specialty which are disabled for editing
+        // If they are disabled, their values won't change from original, so no need to send them
+        if (
+          (key === 'dob' && user.role === 'patient') ||
+          (key === 'card_number' && user.role === 'patient') ||
+          (key === 'login_id' && (user.role === 'doctor' || user.role === 'admin')) ||
+          (key === 'specialty' && user.role === 'doctor')
+        ) {
+          continue;
+        }
+
+        if (formData[key] !== originalFormData[key]) {
+          // Special handling for email: if it's an empty string, treat as no change
+          // This prevents sending an empty string for EmailStr which Pydantic would reject
+          if (key === 'email' && formData[key] === '') {
+            continue;
+          }
+          changedFields[key] = formData[key];
+        }
+      }
+
+      // Add password if provided
+      if (formData.password) {
+        changedFields.password = formData.password;
+      }
+
+      // Construct payload based on user role and changed fields
       if (user.role === 'patient') {
         payload = {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          dob: formData.dob,
-          card_number: formData.card_number,
-          ...(formData.password && { password: formData.password }),
+          ...(changedFields.name !== undefined && { name: changedFields.name }),
+          ...(changedFields.email !== undefined && { email: changedFields.email }),
+          ...(changedFields.phone !== undefined && { phone: changedFields.phone }),
+          ...(changedFields.card_number !== undefined && { card_number: changedFields.card_number }),
+          ...(changedFields.password && { password: changedFields.password }),
         };
       } else if (user.role === 'doctor') {
         payload = {
-          name: formData.name,
-          email: formData.email,
-          ...(formData.password && { password: formData.password }),
+          ...(changedFields.name !== undefined && { name: changedFields.name }),
+          ...(changedFields.email !== undefined && { email: changedFields.email }),
+          ...(changedFields.specialty !== undefined && { specialty: changedFields.specialty }),
+          ...(changedFields.password && { password: changedFields.password }),
         };
       } else if (user.role === 'admin') {
         payload = {
-          name: formData.name,
-          email: formData.email,
-          ...(formData.password && { password: formData.password }),
+          ...(changedFields.name !== undefined && { name: changedFields.name }),
+          ...(changedFields.email !== undefined && { email: changedFields.email }),
+          ...(changedFields.password && { password: changedFields.password }),
         };
+      }
+
+      // Filter out undefined values from payload (redundant with above, but good for safety)
+      payload = Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined));
+
+      // If no fields changed and no password provided, don't send request
+      if (Object.keys(payload).length === 0) {
+        setMessage('沒有任何資料變更。');
+        setLoading(false);
+        setIsEditing(false);
+        return;
       }
 
       await api.put('/api/v1/profile/me', payload);
