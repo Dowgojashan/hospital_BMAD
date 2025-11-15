@@ -188,8 +188,8 @@ const DoctorClinicManagementPage = () => {
                       <button className="btn btn-dark" onClick={() => handleOpenClinic(schedule.schedule_id)}>開診</button>
                     ) : (
                       <>
-                        <button className="btn btn-primary" onClick={() => handleCallNextPatient(schedule.schedule_id)}>叫號</button>
-                        <button className="btn btn-danger" onClick={() => handleCloseClinic(schedule.schedule_id)}>關診</button>
+                        <button className="btn btn-dark" onClick={() => handleCallNextPatient(schedule.schedule_id)}>叫號</button>
+                        <button className="btn btn-dark" onClick={() => handleCloseClinic(schedule.schedule_id)}>關診</button>
                       </>
                     )}
                   </div>
