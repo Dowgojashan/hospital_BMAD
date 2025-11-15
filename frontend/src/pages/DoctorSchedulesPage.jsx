@@ -156,6 +156,7 @@ const DoctorSchedulesPage = () => {
               return (
                 <div className="schedule-tile-content">
                   {daySchedules.map((schedule) => {
+                    console.log("Schedule object in tileContent:", schedule); // Add this line
                     const { isUnavailable, label } = getScheduleStatusInfo(schedule);
                     return (
                       <div key={schedule.schedule_id} className={`schedule-entry ${isUnavailable ? 'unavailable' : ''}`}>

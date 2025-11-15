@@ -59,7 +59,7 @@ const HospitalRegisterPage = () => {
         dob: formData.dob,
         card_number: formData.card_number,
       };
-      await api.post('/api/v1/register/patient', payload);
+      await api.post('/api/v1/auth/register/patient', payload);
       navigate(`/verify-email?email=${formData.email}`); // Redirect to verification page
     } catch (err) {
       setError(err.response?.data?.detail || '註冊失敗，請檢查輸入資料');

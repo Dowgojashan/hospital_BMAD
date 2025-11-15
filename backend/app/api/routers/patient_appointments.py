@@ -7,7 +7,6 @@ from pydantic import BaseModel # Import BaseModel
 from app.db.session import get_db
 from app.schemas.appointment import AppointmentCreate, AppointmentPublic, AppointmentInDB
 from app.services.appointment_service import appointment_service
-from app.services.checkin_service import checkin_service # Import checkin_service
 from app.api.dependencies import get_current_patient # Assuming get_current_patient exists
 from app.crud import crud_doctor # Import crud_doctor module
 from app.crud.crud_user import get_patient
@@ -81,6 +80,7 @@ def patient_check_in(
     """
     patient_id = current_patient["patient_id"]
     try:
+        checkin_service = CheckinService(db) # Instantiate CheckinService here
         result = checkin_service.create_checkin(
             db,
             patient_id=patient_id,

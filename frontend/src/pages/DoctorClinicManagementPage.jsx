@@ -17,12 +17,16 @@ const DoctorClinicManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [queueStatus, setQueueStatus] = useState({}); // {schedule_id: {current_number, waiting_count, estimated_wait_time}}
+  const [waitingPatients, setWaitingPatients] = useState({}); // {schedule_id: [{patient_id, patient_name, ticket_number, ...}]}
 
   useEffect(() => {
     if (user && user.id) {
       loadTodaySchedules();
-      // Set up polling for queue status
-      const interval = setInterval(loadQueueStatusForAllSchedules, 10000); // Poll every 10 seconds
+      // Set up polling for queue status and waiting patients
+      const interval = setInterval(() => {
+        loadQueueStatusForAllSchedules();
+        loadWaitingPatientsForAllSchedules();
+      }, 10000); // Poll every 10 seconds
       return () => clearInterval(interval);
     } else {
       // If user or doctor_id is not available, ensure loading state is eventually false
@@ -43,6 +47,9 @@ const DoctorClinicManagementPage = () => {
       });
       setTodaySchedules(response.data);
       setMessage('');
+      // After loading schedules, also load queue status and waiting patients
+      loadQueueStatusForAllSchedules(response.data); // Pass schedules to avoid stale closure
+      loadWaitingPatientsForAllSchedules(response.data); // Pass schedules
     } catch (error) {
       console.error('載入今日班表失敗:', error);
       setMessage('載入今日班表失敗，請稍後再試。');
@@ -51,11 +58,11 @@ const DoctorClinicManagementPage = () => {
     }
   };
 
-  const loadQueueStatusForAllSchedules = async () => {
-    if (!todaySchedules.length) return;
+  const loadQueueStatusForAllSchedules = async (schedules = todaySchedules) => {
+    if (!schedules.length) return;
 
     const newQueueStatus = {};
-    for (const schedule of todaySchedules) {
+    for (const schedule of schedules) {
       try {
         const response = await api.get(`/api/v1/doctor/schedules/${schedule.schedule_id}/queue-status`);
         newQueueStatus[schedule.schedule_id] = response.data;
@@ -82,6 +89,22 @@ const DoctorClinicManagementPage = () => {
     setQueueStatus(newQueueStatus);
   };
 
+  const loadWaitingPatientsForAllSchedules = async (schedules = todaySchedules) => {
+    if (!schedules.length) return;
+
+    const newWaitingPatients = {};
+    for (const schedule of schedules) {
+      try {
+        const response = await api.get(`/api/v1/doctor/schedules/${schedule.schedule_id}/waiting-patients`);
+        newWaitingPatients[schedule.schedule_id] = response.data;
+      } catch (error) {
+        console.error(`載入 ${schedule.schedule_id} 候診病患列表失敗:`, error);
+        newWaitingPatients[schedule.schedule_id] = []; // Set to empty array on error
+      }
+    }
+    setWaitingPatients(newWaitingPatients);
+  };
+
   const handleOpenClinic = async (scheduleId) => {
     setLoading(true);
     try {
@@ -89,7 +112,8 @@ const DoctorClinicManagementPage = () => {
       alert('診間已開診！');
       setMessage('診間已開診！');
       loadTodaySchedules(); // Reload schedules to update status
-      loadQueueStatusForAllSchedules(); // Reload queue status
+      // No need to call loadQueueStatusForAllSchedules and loadWaitingPatientsForAllSchedules here
+      // as loadTodaySchedules will trigger them via its success callback
     } catch (error) {
       console.error('開診失敗:', error);
       alert('開診失敗，請稍後再試。');
@@ -106,7 +130,8 @@ const DoctorClinicManagementPage = () => {
       alert('診間已關診！');
       setMessage('診間已關診！');
       loadTodaySchedules(); // Reload schedules to update status
-      loadQueueStatusForAllSchedules(); // Reload queue status
+      // No need to call loadQueueStatusForAllSchedules and loadWaitingPatientsForAllSchedules here
+      // as loadTodaySchedules will trigger them via its success callback
     } catch (error) {
       console.error('關診失敗:', error);
       alert('關診失敗，請稍後再試。');
@@ -129,11 +154,38 @@ const DoctorClinicManagementPage = () => {
       alert('已叫號下一位病患！');
       setMessage('已叫號下一位病患！');
       loadTodaySchedules(); // Reload schedules to update status
-      loadQueueStatusForAllSchedules(); // Reload queue status
+      // No need to call loadQueueStatusForAllSchedules and loadWaitingPatientsForAllSchedules here
+      // as loadTodaySchedules will trigger them via its success callback
     } catch (error) {
       console.error('叫號失敗:', error);
       alert('叫號失敗，請稍後再試。');
       setMessage('叫號失敗，請稍後再試。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMedicalRecord = (patientId) => {
+    alert(`病歷管理功能尚未實作，病患 ID: ${patientId}`);
+    // TODO: Implement navigation to medical record page
+  };
+
+  const handleMarkNoShow = async (scheduleId, checkinId) => {
+    if (!window.confirm('確定要將此病患標記為未到嗎？')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post(`/api/v1/doctor/schedules/${scheduleId}/checkins/${checkinId}/mark-no-show`);
+      alert('病患已標記為未到！');
+      setMessage('病患已標記為未到！');
+      loadQueueStatusForAllSchedules(); // Reload queue status
+      loadWaitingPatientsForAllSchedules(); // Reload waiting patients
+    } catch (error) {
+      console.error('標記未到失敗:', error);
+      alert('標記未到失敗，請稍後再試。');
+      setMessage('標記未到失敗，請稍後再試。');
     } finally {
       setLoading(false);
     }
@@ -206,10 +258,38 @@ const DoctorClinicManagementPage = () => {
         )}
       </div>
 
-      {/* TODO: 候診病患列表 */}
       <div className="card">
         <h3>候診病患列表</h3>
-        <p>此處將顯示已報到並等待看診的病患列表。</p>
+        {todaySchedules.length === 0 ? (
+          <p>今天沒有排班，因此沒有候診病患。</p>
+        ) : (
+          <div className="waiting-patients-list">
+            {todaySchedules.map((schedule) => (
+              <div key={schedule.schedule_id} className="schedule-waiting-list-section">
+                <h4>{TIME_PERIOD_OPTIONS[schedule.time_period]} 候診病患</h4>
+                {waitingPatients[schedule.schedule_id] && waitingPatients[schedule.schedule_id].length > 0 ? (
+                  <ul>
+                    {waitingPatients[schedule.schedule_id].map((patient, index) => (
+                      <li key={index} className="waiting-patient-item">
+                        <div className="patient-info">
+                          <span>號碼牌: {patient.ticket_number}</span>
+                          <span>姓名: {patient.patient_name}</span>
+                          <span>報到時間: {new Date(patient.checkin_time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <div className="patient-actions">
+                          <button className="btn btn-info btn-sm" onClick={() => handleMedicalRecord(patient.patient_id)}>病歷管理</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleMarkNoShow(schedule.schedule_id, patient.checkin_id)}>未到</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>目前沒有候診病患。</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

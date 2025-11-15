@@ -78,6 +78,11 @@ const Navbar = () => {
                         </Link>
                       </li>
                       <li className="nav-item">
+                        <Link to="/doctor/clinic-management" className={`nav-link ${isActive('/doctor/clinic-management')}`}>
+                          診間管理
+                        </Link>
+                      </li>
+                      <li className="nav-item">
                         <Link to="/doctor/leave" className={`nav-link ${isActive('/doctor/leave')}`}>
                           停診申請
                         </Link>

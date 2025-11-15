@@ -13,6 +13,7 @@ from app.crud import crud_schedule, crud_checkin, crud_user, crud_leave_request,
 from app.schemas.room_day import RoomDayCreate
 from app.schemas.schedule import SchedulePublic # 假設 SchedulePublic 存在
 from app.schemas.leave_request import LeaveRequestCreate, LeaveRequestRangeCreate # 導入請假申請 schema
+from app.services.queue_service import QueueService # Import QueueService
 
 router = APIRouter()
 
@@ -300,3 +301,55 @@ async def get_waiting_patients(
     
     waiting_list.sort(key=lambda x: x["ticket_sequence"])
     return waiting_list
+
+@router.post("/doctor/schedules/{schedule_id}/checkins/{checkin_id}/mark-no-show", status_code=status.HTTP_200_OK)
+async def mark_patient_no_show(
+    schedule_id: uuid.UUID,
+    checkin_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_active_doctor)
+):
+    """
+    醫生將特定班表中的病患標記為未到。
+    """
+    schedule = crud_schedule.get_schedule(db, schedule_id=schedule_id)
+    if not schedule or schedule.doctor_id != current_doctor.doctor_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
+    
+    if schedule.date != date.today():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能操作今日班表的報到記錄。")
+
+    try:
+        queue_service = QueueService(db)
+        result = await queue_service.mark_no_show(checkin_id=checkin_id)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"標記未到失敗: {e}")
+
+@router.post("/doctor/schedules/{schedule_id}/checkins/{checkin_id}/re-check-in", status_code=status.HTTP_200_OK)
+async def re_check_in_patient(
+    schedule_id: uuid.UUID,
+    checkin_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_active_doctor)
+):
+    """
+    醫生為未到的病患進行補報到。
+    """
+    schedule = crud_schedule.get_schedule(db, schedule_id=schedule_id)
+    if not schedule or schedule.doctor_id != current_doctor.doctor_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
+    
+    if schedule.date != date.today():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能操作今日班表的報到記錄。")
+
+    try:
+        queue_service = QueueService(db)
+        result = await queue_service.re_check_in(checkin_id=checkin_id)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"補報到失敗: {e}")

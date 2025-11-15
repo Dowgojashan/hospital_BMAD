@@ -74,7 +74,7 @@ const CheckInPage = () => {
       const response = await api.get('/api/v1/patient/appointments');
       const today = new Date().toISOString().split('T')[0];
       const todayAppointments = response.data.filter(
-        (apt) => apt.date === today && ['confirmed', 'scheduled'].includes(apt.status)
+        (apt) => apt.date === today && ['confirmed', 'scheduled', 'checked_in'].includes(apt.status)
       );
       setAppointments(todayAppointments);
     } catch (error) {
@@ -114,7 +114,6 @@ const CheckInPage = () => {
       loadQueueStatus();
     } catch (err) {
       const errorMsg = getErrorMessage(err, '報到失敗，請稍後再試。');
-      setError(errorMsg);
       setModalMessage(errorMsg);
       setShowErrorModal(true);
     } finally {

@@ -78,7 +78,7 @@ class AppointmentService:
 
             # 5. Create the appointment
             print(f"DEBUG: Creating new appointment with patient_id={patient_id}, appointment_in={appointment_in}")
-            new_appointment = appointment_crud.create(db, obj_in=appointment_in, patient_id=patient_id)
+            new_appointment = appointment_crud.create(db, obj_in=appointment_in, patient_id=patient_id, schedule_id=schedule.schedule_id)
             print(f"DEBUG: New appointment created: {new_appointment.appointment_id}")
             
             db.commit()

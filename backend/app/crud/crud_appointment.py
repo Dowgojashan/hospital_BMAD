@@ -8,10 +8,11 @@ from app.models.appointment import Appointment
 from app.schemas.appointment import AppointmentCreate, AppointmentUpdate
 
 class AppointmentCRUD:
-    def create(self, db: Session, *, obj_in: AppointmentCreate, patient_id: uuid.UUID) -> Appointment:
+    def create(self, db: Session, *, obj_in: AppointmentCreate, patient_id: uuid.UUID, schedule_id: uuid.UUID) -> Appointment:
         db_obj = Appointment(
             patient_id=patient_id,
             doctor_id=obj_in.doctor_id,
+            schedule_id=schedule_id, # Assign the schedule_id
             date=obj_in.date,
             time_period=obj_in.time_period,
             status="scheduled" # Default status

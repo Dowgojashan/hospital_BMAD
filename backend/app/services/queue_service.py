@@ -22,21 +22,10 @@ class QueueService:
         self.infraction_service = InfractionService(db) # Initialize InfractionService
 
     async def get_patient_queue_status(self, appointment_id: UUID, patient_id: UUID):
-        # 1. Get the check-in record for the appointment
-        checkin_record = self.db.query(Checkin).filter(
-            Checkin.appointment_id == appointment_id,
-            Checkin.patient_id == patient_id
-        ).first()
-
-        if not checkin_record:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="未找到報到記錄。"
-            )
-
-        # 2. Get the Appointment record to find the schedule_id
+        # 1. Get the Appointment record
         appointment_record = self.db.query(Appointment).filter(
-            Appointment.appointment_id == checkin_record.appointment_id
+            Appointment.appointment_id == appointment_id,
+            Appointment.patient_id == patient_id
         ).first()
 
         if not appointment_record:
@@ -45,7 +34,7 @@ class QueueService:
                 detail="未找到預約記錄。"
             )
 
-        # 3. Get the RoomDay record using schedule_id
+        # 2. Get the RoomDay record using schedule_id
         room_day = self.db.query(RoomDay).filter(
             RoomDay.schedule_id == appointment_record.schedule_id
         ).first()
@@ -53,21 +42,37 @@ class QueueService:
         if not room_day:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="未找到診間當日資訊。"
+                detail="診間尚未開放或已關閉。" # More descriptive message
             )
 
-        current_called_sequence = room_day.current_called_sequence
-        my_ticket_sequence = checkin_record.ticket_sequence
+        # 3. Attempt to get the Checkin record (optional, as patient might not have checked in yet)
+        checkin_record = self.db.query(Checkin).filter(
+            Checkin.appointment_id == appointment_id,
+            Checkin.patient_id == patient_id
+        ).first()
+
+        current_called_sequence = room_day.current_called_sequence if room_day.current_called_sequence is not None else 0
+        my_ticket_sequence = checkin_record.ticket_sequence if checkin_record else None
 
         # Calculate current number, my position, waiting count
-        current_number = f"A{current_called_sequence:03d}" # Assuming 'A' prefix for ticket numbers
+        current_number = f"A{current_called_sequence:03d}"
+
+        if my_ticket_sequence is None:
+            return {
+                "current_number": current_number,
+                "my_position": "尚未報到",
+                "waiting_count": "N/A",
+                "estimated_wait_time": "N/A",
+                "status_message": "您尚未報到，請點擊報到按鈕進行報到。"
+            }
+        
         my_position = f"A{my_ticket_sequence:03d}"
 
         waiting_count = 0
         estimated_wait_time = 0
 
         if my_ticket_sequence > current_called_sequence:
-            waiting_count = my_ticket_sequence - current_called_sequence -1
+            waiting_count = my_ticket_sequence - current_called_sequence - 1
             estimated_wait_time = waiting_count * 10 # 10 minutes per patient
 
         return {
@@ -75,6 +80,7 @@ class QueueService:
             "my_position": my_position,
             "waiting_count": waiting_count,
             "estimated_wait_time": estimated_wait_time,
+            "status_message": "候診資訊已更新。"
         }
 
     async def call_next(self, schedule_id: UUID, called_ticket_sequence: int):
@@ -139,3 +145,85 @@ class QueueService:
                     infraction_type="no_show"
                 )
                 print(f"Appointment {appointment.appointment_id} marked as no_show. Infraction created.")
+                
+    async def mark_no_show(self, checkin_id: UUID):
+        checkin = self.db.query(Checkin).filter(Checkin.checkin_id == checkin_id).first()
+        if not checkin:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="報到記錄未找到。")
+
+        # Update Checkin status
+        checkin.status = "no_show" # Assuming Checkin model has a status field
+        self.db.add(checkin)
+        self.db.commit()
+        self.db.refresh(checkin)
+
+        # Update Appointment status
+        appointment = self.appointment_crud.get(self.db, checkin.appointment_id)
+        if appointment:
+            self.appointment_crud.update_status(self.db, appointment_id=appointment.appointment_id, new_status="no_show")
+            # Create an infraction record
+            await self.infraction_service.create_infraction(
+                patient_id=appointment.patient_id,
+                appointment_id=appointment.appointment_id,
+                infraction_type="no_show"
+            )
+        
+        return {"message": "病患已標記為未到。"}
+
+    async def re_check_in(self, checkin_id: UUID):
+        checkin = self.db.query(Checkin).filter(Checkin.checkin_id == checkin_id).first()
+        if not checkin:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="報到記錄未找到。")
+        
+        if checkin.status != "no_show":
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="病患未被標記為未到，無法補報到。")
+
+        room_day = self.db.query(RoomDay).filter(RoomDay.schedule_id == checkin.schedule_id).first()
+        if not room_day:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="診間尚未開放或已關閉。")
+
+        # Update Checkin status back to checked_in
+        checkin.status = "checked_in"
+        self.db.add(checkin)
+        self.db.flush() # Flush to make checkin.ticket_sequence available for re-sequencing
+
+        # Get active waiting patients (excluding the re-checking-in patient's old sequence if it was still active)
+        active_waiting_patients = self.db.query(Checkin).filter(
+            Checkin.schedule_id == checkin.schedule_id,
+            Checkin.status == "checked_in",
+            Checkin.ticket_sequence > room_day.current_called_sequence,
+            Checkin.checkin_id != checkin_id # Exclude the current patient from the list for insertion logic
+        ).order_by(Checkin.ticket_sequence).all()
+
+        new_ticket_sequence = None
+
+        if len(active_waiting_patients) > 3:
+            # Insert after the 3rd waiting patient (index 2)
+            target_sequence = active_waiting_patients[2].ticket_sequence
+            new_ticket_sequence = target_sequence + 1
+
+            # Shift subsequent patients
+            for patient_to_shift in active_waiting_patients:
+                if patient_to_shift.ticket_sequence >= new_ticket_sequence:
+                    patient_to_shift.ticket_sequence += 1
+                    self.db.add(patient_to_shift)
+            self.db.flush() # Flush shifted patients
+
+        else:
+            # Insert at the end of the queue
+            new_ticket_sequence = room_day.next_sequence
+            room_day.next_sequence += 1
+            self.db.add(room_day)
+            self.db.flush() # Flush room_day update
+
+        checkin.ticket_sequence = new_ticket_sequence
+        self.db.add(checkin)
+        self.db.commit()
+        self.db.refresh(checkin)
+
+        # Update Appointment status back to checked_in
+        appointment = self.appointment_crud.get(self.db, checkin.appointment_id)
+        if appointment:
+            self.appointment_crud.update_status(self.db, appointment_id=appointment.appointment_id, new_status="checked_in")
+        
+        return {"message": "病患已成功補報到。", "new_ticket_number": checkin.ticket_number, "new_ticket_sequence": checkin.ticket_sequence}

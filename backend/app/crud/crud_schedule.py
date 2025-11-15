@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, case # Import func and case
 from typing import List, Optional
 import uuid
 from datetime import date, datetime, timedelta
@@ -144,11 +144,15 @@ def list_schedules(db: Session, doctor_ids: Optional[List[uuid.UUID]] = None, da
     return query.offset(skip).limit(limit).all()
 
 
-def get_doctor_schedules(db: Session, doctor_id: uuid.UUID, filter_date: Optional[date] = None, month: Optional[int] = None, year: Optional[int] = None, time_period: Optional[str] = None) -> List[dict]:
+def get_doctor_schedules(db: Session, doctor_id: uuid.UUID, date_str: Optional[str] = None, month: Optional[int] = None, year: Optional[int] = None, time_period: Optional[str] = None) -> List[dict]:
     query = db.query(Schedule, Doctor).join(Doctor, Schedule.doctor_id == Doctor.doctor_id).filter(Schedule.doctor_id == doctor_id)
 
-    if filter_date:
-        query = query.filter(Schedule.date == filter_date)
+    if date_str:
+        try:
+            filter_date = date.fromisoformat(date_str)
+            query = query.filter(Schedule.date == filter_date)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Use YYYY-MM-DD.")
     elif month and year:
         start_date = date(year, month, 1)
         if month == 12:
@@ -172,6 +176,16 @@ def get_doctor_schedules(db: Session, doctor_id: uuid.UUID, filter_date: Optiona
     if time_period:
         query = query.filter(Schedule.time_period == time_period)
     
+    # Add order by time_period
+    query = query.order_by(
+        case(
+            (Schedule.time_period == "morning", 1),
+            (Schedule.time_period == "afternoon", 2),
+            (Schedule.time_period == "night", 3),
+            else_=4 # Default for any other unexpected values
+        )
+    )
+
     results = []
     for schedule_obj, doctor_obj in query.all():
         # Construct a dictionary that contains all fields for ScheduleDoctorPublic
