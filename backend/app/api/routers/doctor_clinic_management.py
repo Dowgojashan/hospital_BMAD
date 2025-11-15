@@ -3,6 +3,8 @@ import uuid
 from datetime import date, datetime
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+import pytz # Import pytz
+
 from app.db.session import get_db
 from app.api.dependencies import get_current_active_doctor # 導入正確的 get_current_active_doctor
 from app.models.doctor import Doctor
@@ -16,6 +18,11 @@ from app.schemas.leave_request import LeaveRequestCreate, LeaveRequestRangeCreat
 from app.services.queue_service import QueueService # Import QueueService
 
 router = APIRouter()
+
+def _get_taiwan_current_date():
+    """Helper to get the current date in Taiwan time zone."""
+    taiwan_tz = pytz.timezone('Asia/Taipei')
+    return datetime.now(taiwan_tz).date()
 
 @router.get("/doctor/schedules", response_model=List[SchedulePublic])
 async def get_doctor_today_schedules(
@@ -116,8 +123,8 @@ async def open_clinic(
         print(f"DEBUG: Schedule not found or does not belong to doctor. schedule={schedule}, current_doctor.doctor_id={current_doctor.doctor_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
     
-    if schedule.date != date.today():
-        print(f"DEBUG: Schedule date is not today. schedule.date={schedule.date}, today={date.today()}")
+    if schedule.date != _get_taiwan_current_date():
+        print(f"DEBUG: Schedule date is not today. schedule.date={schedule.date}, today={_get_taiwan_current_date()}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能開診今日的班表。")
 
     try:
@@ -164,7 +171,7 @@ async def close_clinic(
     if not schedule or schedule.doctor_id != current_doctor.doctor_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
     
-    if schedule.date != date.today():
+    if schedule.date != _get_taiwan_current_date():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能關診今日的班表。")
 
     try:
@@ -194,7 +201,7 @@ async def get_doctor_schedule_queue_status(
     if not schedule or schedule.doctor_id != current_doctor.doctor_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
     
-    if schedule.date != date.today():
+    if schedule.date != _get_taiwan_current_date():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能查詢今日班表的候診資訊。")
 
     room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
@@ -242,7 +249,7 @@ async def call_next_patient(
     if not schedule or schedule.doctor_id != current_doctor.doctor_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
     
-    if schedule.date != date.today():
+    if schedule.date != _get_taiwan_current_date():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能叫號今日班表的病患。")
 
     room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
@@ -274,7 +281,7 @@ async def get_waiting_patients(
     if not schedule or schedule.doctor_id != current_doctor.doctor_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
     
-    if schedule.date != date.today():
+    if schedule.date != _get_taiwan_current_date():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能查詢今日班表的候診病患。")
 
     room_day = crud_room_day.room_day.get_by_schedule_id(db, schedule_id=schedule_id)
@@ -318,7 +325,7 @@ async def mark_patient_no_show(
     if not schedule or schedule.doctor_id != current_doctor.doctor_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
     
-    if schedule.date != date.today():
+    if schedule.date != _get_taiwan_current_date():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能操作今日班表的報到記錄。")
 
     try:
@@ -344,7 +351,7 @@ async def re_check_in_patient(
     if not schedule or schedule.doctor_id != current_doctor.doctor_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
     
-    if schedule.date != date.today():
+    if schedule.date != _get_taiwan_current_date():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能操作今日班表的報到記錄。")
 
     try:

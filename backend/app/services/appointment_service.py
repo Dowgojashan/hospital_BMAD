@@ -1,11 +1,11 @@
-# backend/app/services/appointment_service.py
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, BackgroundTasks
 import uuid
-from datetime import date
+from datetime import date, datetime, time # Import datetime and time
 from typing import List # Import List
 from sqlalchemy import case # Import case
 import os # Import os
+import pytz # Import pytz
 
 from app.crud.crud_appointment import appointment_crud
 from app.crud.crud_user import get_patient
@@ -18,6 +18,11 @@ from app.models.patient import Patient # Import Patient model
 from app.utils.email_sender import email_sender
 
 class AppointmentService:
+    def _get_taiwan_current_date(self):
+        """Helper to get the current date in Taiwan time zone."""
+        taiwan_tz = pytz.timezone('Asia/Taipei')
+        return datetime.now(taiwan_tz).date()
+
     def create_appointment(
         self, db: Session, *, patient_id: uuid.UUID, appointment_in: AppointmentCreate, background_tasks: BackgroundTasks
     ) -> AppointmentInDB:
@@ -124,10 +129,16 @@ class AppointmentService:
             .filter(Appointment.patient_id == patient_id)
         )
 
-        if start_date:
-            query = query.filter(Appointment.date >= start_date)
-        if end_date:
-            query = query.filter(Appointment.date <= end_date)
+        # If no date range is provided, filter for today in Taiwan time
+        if not start_date and not end_date:
+            taiwan_today = self._get_taiwan_current_date()
+            query = query.filter(Appointment.date == taiwan_today)
+        else:
+            if start_date:
+                query = query.filter(Appointment.date >= start_date)
+            if end_date:
+                query = query.filter(Appointment.date <= end_date)
+        
         if statuses:
             query = query.filter(Appointment.status.in_(statuses))
 

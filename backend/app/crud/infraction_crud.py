@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, time
+import pytz # Import pytz
 
 from app.models.infraction import Infraction
 from app.schemas.infraction import InfractionCreate, InfractionUpdate # Assuming these schemas exist
@@ -11,11 +12,13 @@ class InfractionCRUD:
         self.db = db
 
     def create(self, obj_in: InfractionCreate) -> Infraction:
+        taiwan_tz = pytz.timezone('Asia/Taipei')
+        now_in_taiwan = datetime.now(taiwan_tz)
         db_obj = Infraction(
             patient_id=obj_in.patient_id,
             appointment_id=obj_in.appointment_id,
             infraction_type=obj_in.infraction_type,
-            occurred_at=datetime.now(),
+            occurred_at=now_in_taiwan,
             penalty_applied=False,
             penalty_until=None,
             notes=obj_in.notes
@@ -47,5 +50,17 @@ class InfractionCRUD:
 
     def get_all_by_patient(self, patient_id: uuid.UUID) -> List[Infraction]:
         return self.db.query(Infraction).filter(Infraction.patient_id == patient_id).all()
+
+    def count_infractions_in_period(self, patient_id: uuid.UUID, infraction_type: str, start_date: date, end_date: date) -> int:
+        taiwan_tz = pytz.timezone('Asia/Taipei')
+        start_datetime = taiwan_tz.localize(datetime.combine(start_date, time.min))
+        end_datetime = taiwan_tz.localize(datetime.combine(end_date, time.max)) # time.max for end of day
+
+        return self.db.query(Infraction).filter(
+            Infraction.patient_id == patient_id,
+            Infraction.infraction_type == infraction_type,
+            Infraction.occurred_at >= start_datetime,
+            Infraction.occurred_at <= end_datetime
+        ).count()
 
 infraction_crud = InfractionCRUD(None) # Placeholder, will be initialized with db session in service

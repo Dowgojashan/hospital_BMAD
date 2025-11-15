@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 import uuid
 from datetime import date, datetime, timedelta
 import logging # Import logging
+import pytz # Import pytz
 
 from app.crud.crud_appointment import appointment_crud
 from app.crud.crud_room_day import room_day as crud_room_day
@@ -21,6 +22,11 @@ class CheckinService:
         self.appointment_crud = appointment_crud
         self.crud_room_day = crud_room_day
         self.crud_checkin = crud_checkin
+
+    def _get_taiwan_current_date(self):
+        """Helper to get the current date in Taiwan time zone."""
+        taiwan_tz = pytz.timezone('Asia/Taipei')
+        return datetime.now(taiwan_tz).date()
 
     def create_checkin(
         self,
@@ -79,8 +85,8 @@ class CheckinService:
         # This check is already in appointment_service.create_appointment, but for check-in,
         # we need to ensure the appointment date is not in the past or future beyond a reasonable window.
         # For simplicity, let's assume check-in is only allowed on the appointment date.
-        if appointment.date != date.today():
-            logger.warning(f"報到失敗: 預約 {appointment.appointment_id} 日期 {appointment.date} 不為今天 {date.today()}。")
+        if appointment.date != self._get_taiwan_current_date():
+            logger.warning(f"報到失敗: 預約 {appointment.appointment_id} 日期 {appointment.date} 不為今天 {self._get_taiwan_current_date()}。")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="只能在預約當天報到。"
@@ -128,10 +134,11 @@ class CheckinService:
         logger.info(f"預約 {appointment.appointment_id} 狀態更新為 'checked_in'。")
 
         # 7. Create CHECKIN record (AC-1)
+        taiwan_tz = pytz.timezone('Asia/Taipei')
         checkin_obj_in = CheckinCreate(
             appointment_id=appointment.appointment_id,
             patient_id=patient_id,
-            checkin_time=datetime.now(),
+            checkin_time=datetime.now(taiwan_tz),
             checkin_method=checkin_method,
             ticket_sequence=ticket_sequence,
             ticket_number=ticket_number

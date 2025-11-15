@@ -71,12 +71,14 @@ const CheckInPage = () => {
 
   const loadAppointments = async () => {
     try {
-      const response = await api.get('/api/v1/patient/appointments');
-      const today = new Date().toISOString().split('T')[0];
-      const todayAppointments = response.data.filter(
-        (apt) => apt.date === today && ['confirmed', 'scheduled', 'checked_in', 'no_show'].includes(apt.status)
-      );
-      setAppointments(todayAppointments);
+      // The backend now handles filtering for today's appointments in Taiwan time
+      // and also filters by the specified statuses.
+      const response = await api.get('/api/v1/patient/appointments', {
+        params: {
+          statuses: ['confirmed', 'scheduled', 'checked_in', 'no_show']
+        }
+      });
+      setAppointments(response.data); // Use the filtered data directly from the backend
     } catch (error) {
       console.error('載入預約失敗:', error);
       setModalMessage(getErrorMessage(error, '載入預約失敗，請稍後再試。'));
