@@ -117,6 +117,12 @@ const DoctorClinicManagementPage = () => {
   };
 
   const handleCallNextPatient = async (scheduleId) => {
+    const currentQueueStatus = queueStatus[scheduleId] || { waiting_count: 0 };
+    if (currentQueueStatus.waiting_count === 0) {
+      alert('現在無病患等候。');
+      return;
+    }
+
     setLoading(true);
     try {
       await api.post(`/api/v1/doctor/schedules/${scheduleId}/call-next-patient`);
