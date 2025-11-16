@@ -8,7 +8,7 @@ import pytz # Import pytz
 from app.crud.crud_appointment import appointment_crud
 from app.crud.crud_room_day import room_day as crud_room_day
 from app.crud.crud_checkin import checkin as crud_checkin
-from app.crud.crud_user import get_patient
+from app.crud.crud_patient import patient_crud
 from app.schemas.checkin import CheckinCreate
 from app.schemas.room_day import RoomDayCreate
 from app.models.appointment import Appointment
@@ -39,7 +39,7 @@ class CheckinService:
         logger.info(f"嘗試為 patient_id={patient_id}, appointment_id={appointment_id} 創建報到記錄。")
 
         # 1. Fetch Patient and Appointment records
-        patient = get_patient(db, patient_id=patient_id)
+        patient = patient_crud.get(db, patient_id=patient_id)
         appointment = appointment_crud.get(db, appointment_id=appointment_id)
 
         if not patient:

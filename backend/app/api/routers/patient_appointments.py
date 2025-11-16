@@ -8,8 +8,8 @@ from app.db.session import get_db
 from app.schemas.appointment import AppointmentCreate, AppointmentPublic, AppointmentInDB
 from app.services.appointment_service import appointment_service
 from app.api.dependencies import get_current_patient # Assuming get_current_patient exists
-from app.crud import crud_doctor # Import crud_doctor module
-from app.crud.crud_user import get_patient
+from app.crud.crud_doctor import doctor_crud # Import doctor_crud
+from app.crud.crud_patient import patient_crud
 from app.crud import crud_schedule # Import crud_schedule
 from app.schemas.schedule import SchedulePublic, ScheduleDoctorPublic # Import SchedulePublic and ScheduleDoctorPublic
 from app.schemas.doctor import DoctorPublic # Import DoctorPublic
@@ -44,8 +44,8 @@ def create_patient_appointment(
         # Or, we can enrich it here if needed. Let's enrich it for better UX.
         
 
-        db_doctor = crud_doctor.get_doctor(db, doctor_id=appointment.doctor_id)
-        db_patient = get_patient(db, patient_id=appointment.patient_id)
+        db_doctor = doctor_crud.get(db, doctor_id=appointment.doctor_id)
+        db_patient = patient_crud.get(db, patient_id=appointment.patient_id)
 
         if not db_doctor or not db_patient:
             raise HTTPException(
@@ -161,5 +161,5 @@ def list_doctors_for_patient(
     """
     Retrieve a list of doctors for patients to filter by specialty.
     """
-    doctors = crud_doctor.list_doctors(db, specialty=specialty)
+    doctors = doctor_crud.get_multi(db, specialty=specialty)
     return doctors

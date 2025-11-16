@@ -1,0 +1,1 @@
+from .crud_medical_record import medical_record

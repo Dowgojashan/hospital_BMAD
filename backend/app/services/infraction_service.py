@@ -5,7 +5,7 @@ from datetime import date, timedelta, datetime
 import pytz # Import pytz
 
 from app.crud.infraction_crud import InfractionCRUD
-from app.crud.crud_user import update_patient_suspended_until
+from app.crud.crud_patient import patient_crud
 from app.schemas.infraction import InfractionCreate
 
 class InfractionService:
@@ -50,12 +50,13 @@ class InfractionService:
                 penalty_until = taiwan_today + timedelta(days=self.PENALTY_DURATION_DAYS)
                 
                 # Update patient's suspended_until field
-                update_patient_suspended_until(
-                    self.db,
-                    patient_id=patient_id,
-                    suspended_until=penalty_until
-                )
-
+                patient = patient_crud.get(self.db, patient_id=patient_id)
+                if patient:
+                    patient_crud.update(
+                        self.db,
+                        db_obj=patient,
+                        obj_in={"suspended_until": penalty_until}
+                    )
                 print(f"Patient {patient_id} reached {self.NO_SHOW_PENALTY_THRESHOLD} no-shows within {self.NO_SHOW_COUNT_WINDOW_DAYS} days. Suspended until {penalty_until}.")
         
         print(f"Infraction created: {new_infraction.infraction_id} for patient {patient_id}, type {infraction_type}.")

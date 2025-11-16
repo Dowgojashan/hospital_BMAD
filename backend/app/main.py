@@ -1,7 +1,7 @@
 # backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware # Import CORSMiddleware
-from app.api.routers import auth, admin_management, schedules, patient_appointments, queue, doctor_clinic_management, user_profile
+from app.api.routers import auth, admin_management, schedules, patient_appointments, queue, doctor_clinic_management, user_profile, medical_record
 import os
 
 app = FastAPI()
@@ -26,6 +26,7 @@ app.include_router(patient_appointments.router, prefix="/api/v1/patient", tags=[
 app.include_router(queue.router, prefix="/api/v1", tags=["Queue"])
 app.include_router(doctor_clinic_management.router, prefix="/api/v1", tags=["Doctor Clinic Management"])
 app.include_router(user_profile.router, prefix="/api/v1/profile", tags=["User Profile"])
+app.include_router(medical_record.router, prefix="/api/v1", tags=["Medical Records"])
 
 # 僅在開發環境中包含開發工具路由
 if os.getenv("ENV") == "development":

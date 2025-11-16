@@ -6,9 +6,9 @@ import uuid
 from app.db.session import get_db
 from app.core.security import verify_token
 from app.models import Admin, Doctor, Patient
-from app.crud.crud_user import get_patient # Corrected import for patient CRUD
-from app.crud.crud_doctor import get_doctor # Corrected import for doctor CRUD
-from app.crud.crud_admin import get_admin # Corrected import for admin CRUD
+from app.crud.crud_patient import patient_crud
+from app.crud.crud_doctor import doctor_crud
+from app.crud.crud_admin import admin_crud
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
@@ -31,11 +31,11 @@ async def get_current_user(
 
     user = None
     if user_role == "patient":
-        user = get_patient(db, patient_id=user_id) # Use get_patient from crud_user
+        user = patient_crud.get(db, patient_id=user_id)
     elif user_role == "doctor":
-        user = get_doctor(db, doctor_id=user_id) # Use get_doctor from crud_doctor
+        user = doctor_crud.get(db, doctor_id=user_id)
     elif user_role == "admin":
-        user = get_admin(db, admin_id=user_id) # Use get_admin from crud_admin
+        user = admin_crud.get(db, admin_id=user_id)
 
     if user is None:
         raise credentials_exception

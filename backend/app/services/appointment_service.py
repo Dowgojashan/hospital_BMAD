@@ -8,8 +8,8 @@ import os # Import os
 import pytz # Import pytz
 
 from app.crud.crud_appointment import appointment_crud
-from app.crud.crud_user import get_patient
-from app.crud.crud_doctor import get_doctor
+from app.crud.crud_patient import patient_crud
+from app.crud.crud_doctor import doctor_crud
 from app.schemas.appointment import AppointmentCreate, AppointmentInDB, AppointmentPublic
 from app.models.schedule import Schedule
 from app.models.appointment import Appointment
@@ -91,8 +91,8 @@ class AppointmentService:
             print(f"DEBUG: Appointment committed and refreshed.")
 
             # 6. Send confirmation email in the background
-            patient = get_patient(db, patient_id=patient_id)
-            doctor = get_doctor(db, doctor_id=appointment_in.doctor_id)
+            patient = patient_crud.get(db, patient_id=patient_id)
+            doctor = doctor_crud.get(db, doctor_id=appointment_in.doctor_id)
 
             if patient and doctor:
                 time_period_map = {

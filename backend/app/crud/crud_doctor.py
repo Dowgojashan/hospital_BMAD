@@ -1,62 +1,40 @@
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Any, Dict, Union
 import uuid
 
 from app.models.doctor import Doctor
 from app.schemas.doctor import DoctorCreate, DoctorUpdate
 from app.core.security import get_password_hash
+from app.crud.base import CRUDBase
 
 
-def get_doctor(db: Session, doctor_id: uuid.UUID) -> Optional[Doctor]:
-    return db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
+class CRUDDoctor(CRUDBase[Doctor, DoctorCreate, DoctorUpdate]):
+    def get(self, db: Session, doctor_id: uuid.UUID) -> Optional[Doctor]:
+        return db.query(self.model).filter(self.model.doctor_id == doctor_id).first()
+
+    def get_by_login_id(self, db: Session, doctor_login_id: str) -> Optional[Doctor]:
+        return db.query(self.model).filter(self.model.doctor_login_id == doctor_login_id).first()
+
+    def create(self, db: Session, obj_in: DoctorCreate) -> Doctor:
+        create_data = obj_in.dict()
+        hashed_password = get_password_hash(create_data["password"])
+        create_data["password_hash"] = hashed_password
+        del create_data["password"]
+        db_obj = self.model(**create_data)
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+
+    def update(self, db: Session, db_obj: Doctor, obj_in: Union[DoctorUpdate, Dict[str, Any]]) -> Doctor:
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.dict(exclude_unset=True)
+        if "password" in update_data:
+            update_data["password_hash"] = get_password_hash(update_data["password"])
+            del update_data["password"]
+        return super().update(db, db_obj=db_obj, obj_in=update_data)
 
 
-def list_doctors(db: Session, specialty: Optional[str] = None, skip: int = 0, limit: int = 100) -> List[Doctor]:
-    query = db.query(Doctor)
-    if specialty:
-        query = query.filter(Doctor.specialty == specialty)
-    return query.offset(skip).limit(limit).all()
-
-
-def create_doctor(db: Session, doctor_in: DoctorCreate) -> Doctor:
-    print(f"Received doctor_in data: {doctor_in.dict()}") # Debug print
-    hashed_password = get_password_hash(doctor_in.password)
-    db_doctor = Doctor(
-        doctor_login_id=doctor_in.doctor_login_id,
-        password_hash=hashed_password,
-        name=doctor_in.name,
-        specialty=doctor_in.specialty,
-        email=doctor_in.email,
-    )
-    db.add(db_doctor)
-    db.commit()
-    db.refresh(db_doctor)
-    return db_doctor
-
-
-def update_doctor(db: Session, doctor_id: uuid.UUID, doctor_in: DoctorUpdate) -> Optional[Doctor]:
-    db_doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
-    if not db_doctor:
-        return None
-
-    update_data = doctor_in.dict(exclude_unset=True)
-    if "password" in update_data:
-        update_data["password_hash"] = get_password_hash(update_data["password"])
-        del update_data["password"]
-
-    for field, value in update_data.items():
-        setattr(db_doctor, field, value)
-
-    db.add(db_doctor)
-    db.commit()
-    db.refresh(db_doctor)
-    return db_doctor
-
-
-def delete_doctor(db: Session, doctor_id: uuid.UUID) -> Optional[Doctor]:
-    db_doctor = db.query(Doctor).filter(Doctor.doctor_id == doctor_id).first()
-    if not db_doctor:
-        return None
-    db.delete(db_doctor)
-    db.commit()
-    return db_doctor
+doctor_crud = CRUDDoctor(Doctor)

@@ -2,13 +2,14 @@ import logging
 import re
 from sqlalchemy.orm import Session
 from typing import Optional, Tuple, List
-from fastapi import HTTPException, status # Import status
-import uuid # Import uuid
-from datetime import datetime, date # Import datetime and date
+from fastapi import HTTPException, status
+import uuid
+from datetime import datetime, date
 
 from app.models import Admin, Doctor, Patient
-from app.schemas.patient import PatientCreate, PatientUpdate # Import PatientUpdate
+from app.schemas.patient import PatientCreate, PatientUpdate
 from app.core import security
+from .crud_patient import patient_crud 
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Tup
             return doctor, "doctor"
 
     # 3) PATIENT - match email (PRD: patient login by email)
-    patient = db.query(Patient).filter(Patient.email == username).one_or_none()
+    patient = patient_crud.get_by_email(db, email=username)
     if patient:
         if security.verify_password(password, patient.password_hash):
             logger.info("authenticate_user: end (patient)")
@@ -42,110 +43,3 @@ def authenticate_user(db: Session, username: str, password: str) -> Optional[Tup
 
     logger.info("authenticate_user: end (not found)")
     return None
-
-
-def create_patient(
-    db: Session,
-    patient_in: PatientCreate,
-    is_verified: bool = False,
-    verification_code: Optional[str] = None,
-    code_expires_at: Optional[datetime] = None
-):
-    logger.info("create_patient: start")
-
-    # Check for existing email
-    existing_patient_email = db.query(Patient).filter(Patient.email == patient_in.email).first()
-    if existing_patient_email:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    # Check for existing card number
-    existing_patient_card = db.query(Patient).filter(Patient.card_number == patient_in.card_number).first()
-    if existing_patient_card:
-        raise HTTPException(status_code=400, detail="Card number already registered")
-
-    hashed = security.get_password_hash(patient_in.password)
-    db_obj = Patient(
-        card_number=patient_in.card_number,
-        name=patient_in.name,
-        password_hash=hashed,
-        dob=patient_in.dob,
-        phone=patient_in.phone,
-        email=patient_in.email,
-        is_verified=is_verified,
-        verification_code=verification_code,
-        code_expires_at=code_expires_at,
-    )
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    logger.info("create_patient: end")
-    return db_obj
-
-
-def get_patient(db: Session, patient_id: uuid.UUID) -> Optional[Patient]:
-    return db.query(Patient).filter(Patient.patient_id == patient_id).first()
-
-def get_patient_by_email(db: Session, email: str) -> Optional[Patient]:
-    return db.query(Patient).filter(Patient.email == email).first()
-
-
-def get_patient_by_reset_token(db: Session, token: str) -> Optional[Patient]:
-    return db.query(Patient).filter(Patient.reset_password_token == token).first()
-
-
-def list_patients(db: Session, skip: int = 0, limit: int = 100) -> List[Patient]:
-    return db.query(Patient).offset(skip).limit(limit).all()
-
-
-def update_patient(db: Session, patient_id: uuid.UUID, patient_in: PatientUpdate) -> Optional[Patient]:
-    db_patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
-    if not db_patient:
-        return None
-
-    update_data = patient_in.dict(exclude_unset=True)
-
-    if "email" in update_data and update_data["email"] != db_patient.email:
-        existing_patient = db.query(Patient).filter(Patient.email == update_data["email"]).first()
-        if existing_patient:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered by another patient."
-            )
-    
-    if "card_number" in update_data and update_data["card_number"] != db_patient.card_number:
-        existing_card = db.query(Patient).filter(Patient.card_number == update_data["card_number"]).first()
-        if existing_card:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Card number already registered by another patient."
-            )
-
-    if "password" in update_data and update_data["password"]:
-        db_patient.password_hash = security.get_password_hash(update_data["password"])
-        del update_data["password"]
-
-    for field, value in update_data.items():
-        setattr(db_patient, field, value)
-
-    db.add(db_patient)
-    db.commit()
-    db.refresh(db_patient)
-    return db_patient
-
-
-def delete_patient(db: Session, patient_id: uuid.UUID) -> Optional[Patient]:
-    db_patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
-    if not db_patient:
-        return None
-    db.delete(db_patient)
-    db.commit()
-    return db_patient
-
-def update_patient_suspended_until(db: Session, patient_id: uuid.UUID, suspended_until: Optional[date]) -> Optional[Patient]:
-    db_patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
-    if db_patient:
-        db_patient.suspended_until = suspended_until
-        db.add(db_patient)
-        db.commit()
-        db.refresh(db_patient)
-    return db_patient
