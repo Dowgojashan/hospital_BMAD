@@ -21,6 +21,13 @@ def get_medical_records_by_doctor(db: Session, doctor_id: uuid.UUID, patient_id:
     
     return query.order_by(MedicalRecord.created_at.desc()).offset(skip).limit(limit).all()
 
+def get_medical_records_by_patient(db: Session, patient_id: uuid.UUID, department: Optional[str] = None, skip: int = 0, limit: int = 100):
+    query = db.query(MedicalRecord).filter(MedicalRecord.patient_id == patient_id)
+    if department:
+        query = query.filter(MedicalRecord.department == department)
+    query = query.options(joinedload(MedicalRecord.doctor), joinedload(MedicalRecord.patient))
+    return query.order_by(MedicalRecord.created_at.desc()).offset(skip).limit(limit).all()
+
 def create_medical_record(db: Session, medical_record: Dict[str, Any]):
     logger.info(f"CRUD: Received medical record data for creation: {medical_record}")
     db_medical_record = MedicalRecord(**medical_record)

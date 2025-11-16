@@ -27,9 +27,10 @@ def create_medical_record(
             detail="Only doctors can create medical records."
         )
     
-    # Ensure the doctor_id is set to the current user's ID
+    # Ensure the doctor_id and department are set from the current user's details
     medical_record_data = medical_record.dict()
     medical_record_data["doctor_id"] = current_user["user_obj"].doctor_id
+    medical_record_data["department"] = current_user["user_obj"].specialty # Use doctor's specialty as department
     logger.info(f"Attempting to create medical record with data: {medical_record_data}")
 
     db_medical_record = crud_medical_record.create_medical_record(db=db, medical_record=medical_record_data)
@@ -49,6 +50,34 @@ def read_doctor_medical_records(
     
     medical_records_from_db = crud_medical_record.get_medical_records_by_doctor(
         db=db, doctor_id=current_user["user_obj"].doctor_id, patient_id=patient_id
+    )
+
+    # Manually construct the response to include names from relationships
+    response_records = []
+    for record in medical_records_from_db:
+        record_data = MedicalRecordSchema.model_validate(record)
+        if record.doctor:
+            record_data.doctor_name = record.doctor.name
+        if record.patient:
+            record_data.patient_name = record.patient.name
+        response_records.append(record_data)
+        
+    return response_records
+
+@router.get("/patient/me", response_model=List[MedicalRecordSchema])
+def read_patient_medical_records(
+    department: Optional[str] = None, # New optional department query parameter
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    if current_user["role"] != "patient":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only patients can view their own medical records."
+        )
+    
+    medical_records_from_db = crud_medical_record.get_medical_records_by_patient(
+        db=db, patient_id=current_user["user_obj"].patient_id, department=department
     )
 
     # Manually construct the response to include names from relationships

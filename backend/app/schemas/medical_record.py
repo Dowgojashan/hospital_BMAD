@@ -7,6 +7,7 @@ import uuid
 class MedicalRecordBase(BaseModel):
     summary: Optional[str] = None
     prescription: Optional[str] = None
+    department: Optional[str] = None
 
 
 class MedicalRecordCreate(MedicalRecordBase):
