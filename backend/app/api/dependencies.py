@@ -12,7 +12,7 @@ from app.core.security import verify_token
 from app.models import Admin, Doctor, Patient
 from app.crud.crud_user import get_patient # Corrected import for patient CRUD
 from app.crud.crud_doctor import get_doctor # Corrected import for doctor CRUD
-from app.crud.crud_admin import get_admin # Corrected import for admin CRUD
+from app.crud.crud_admin import get_admin_by_id as get_admin # Corrected import for admin CRUD
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 

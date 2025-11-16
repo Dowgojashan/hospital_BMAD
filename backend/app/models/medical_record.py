@@ -12,6 +12,7 @@ class MedicalRecord(Base):
     doctor_id = Column(UUIDType, ForeignKey("DOCTOR.doctor_id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     summary = Column(Text, nullable=True)
+    prescription = Column(Text, nullable=True)
 
     patient = relationship("Patient", back_populates="medical_records")
     doctor = relationship("Doctor", back_populates="medical_records")

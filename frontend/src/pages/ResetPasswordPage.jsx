@@ -39,7 +39,7 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      const response = await api.post('/api/v1/reset-password', { token, password });
+      const response = await api.post('/api/v1/auth/reset-password', { token, password });
       setMessage(response.data.message || '密碼已成功重設，3秒後將自動跳轉至登入頁面。');
       setTimeout(() => {
         navigate('/login');

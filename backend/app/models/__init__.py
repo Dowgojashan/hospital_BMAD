@@ -11,6 +11,7 @@ from .audit_log import AuditLog
 from .visit_call import VisitCall
 from .infraction import Infraction
 from .room_day import RoomDay
+from .leave_request import LeaveRequest # Added import
 
 __all__ = [
     "Base",
@@ -25,4 +26,5 @@ __all__ = [
     "VisitCall",
     "Infraction",
     "RoomDay",
+    "LeaveRequest", # Added to __all__
 ]

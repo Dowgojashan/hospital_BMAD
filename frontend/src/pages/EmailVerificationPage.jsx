@@ -54,7 +54,7 @@ const EmailVerificationPage = () => {
     }
 
     try {
-      await api.post('/api/v1/verify-email', { email, otp });
+      await api.post('/api/v1/auth/verify-email', { email, otp });
       setModalMessage('電子郵件驗證成功！您現在可以登入。');
       setShowSuccessModal(true);
       // Optionally redirect to login after a short delay or on modal close
@@ -92,7 +92,7 @@ const EmailVerificationPage = () => {
     }
 
     try {
-      await api.post('/api/v1/resend-verification-email', { email });
+      await api.post('/api/v1/auth/resend-verification-email', { email });
       setModalMessage('新的驗證碼已發送到您的電子郵件。');
       setShowSuccessModal(true);
     } catch (err) {

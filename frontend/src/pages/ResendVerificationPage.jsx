@@ -18,7 +18,7 @@ export default function ResendVerificationPage() {
     setError('');
     setLoading(true);
     try {
-      const response = await api.post('/api/v1/resend-verification-email', { email });
+      const response = await api.post('/api/v1/auth/resend-verification-email', { email });
       setMessage(response.data.message || '新的驗證信已成功寄出，請檢查您的信箱。');
       setEmailSent(true);
     } catch (err) {
@@ -34,7 +34,7 @@ export default function ResendVerificationPage() {
     setError('');
     setLoading(true);
     try {
-      const response = await api.post('/api/v1/verify-email', { email, otp });
+      const response = await api.post('/api/v1/auth/verify-email', { email, otp });
       setMessage(response.data.message || '電子郵件驗證成功！2秒後將跳轉至登入頁面。');
       setTimeout(() => {
         navigate('/login');

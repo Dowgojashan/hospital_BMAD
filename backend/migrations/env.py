@@ -17,6 +17,13 @@ from app.db.base import Base
 
 # Import all models to ensure they are registered with SQLAlchemy MetaData
 import app.models
+from app.db.base import UUIDType # Added import for UUIDType
+
+# Define a custom type engine for UUIDType
+def type_engine(type_, **kw):
+    if isinstance(type_, UUIDType):
+        return postgresql.UUID(as_uuid=True)
+    return type_
 
 # Load environment variables from .env file
 load_dotenv()
@@ -59,6 +66,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        type_engine=type_engine, # Add this line
     )
 
     with context.begin_transaction():
@@ -81,7 +89,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            type_engine=type_engine # Add this line
         )
 
         with context.begin_transaction():

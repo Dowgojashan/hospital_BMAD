@@ -15,7 +15,7 @@ export default function ForgotPasswordPage() {
     setError('');
     setLoading(true);
     try {
-      const response = await api.post('/api/v1/forgot-password', { email });
+      const response = await api.post('/api/v1/auth/forgot-password', { email });
       setMessage(response.data.message || '如果該信箱存在，一封密碼重設郵件將會寄出。');
     } catch (err) {
       setError(err.response?.data?.detail || '發生錯誤，請稍後再試。');

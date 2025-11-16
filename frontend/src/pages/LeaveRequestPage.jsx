@@ -214,7 +214,7 @@ const LeaveRequestPage = () => {
                           return (
                             <div
                               key={schedule.schedule_id}
-                              className={`schedule-entry ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''} ${isUnavailable ? 'unavailable' : ''}`}
+                              className={`schedule-entry schedule-text-black ${selectedScheduleSlot?.schedule_id === schedule.schedule_id ? 'selected' : ''} ${isUnavailable ? 'unavailable' : ''}`}
                               onClick={() => !isUnavailable && setSelectedScheduleSlot(schedule)}
                             >
                               <span className="time-period-label">{getTimePeriodLabel(schedule.time_period)}</span>

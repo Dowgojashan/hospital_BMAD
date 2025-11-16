@@ -31,9 +31,14 @@
 
 .schedule-entry.unavailable {
   background-color: #f8d7da; /* Light red for unavailable */
-  color: #dc3545;
+  color: black !important; /* Changed to black */
   text-decoration: line-through;
   cursor: not-allowed;
+}
+
+/* Style for the current day in react-calendar */
+.react-calendar__tile--now {
+  color: black !important;
 }
 
 .time-period-label {
@@ -43,6 +48,7 @@
 .status-label {
   font-size: 0.7em;
   margin-left: 5px;
+  color: black !important;
 }
 
 /* Modal Styles (copied from BookAppointmentPage.css for consistency) */
@@ -107,4 +113,9 @@
 
 .selected-slot-display strong {
   color: #0056b3;
+}
+
+/* Custom style for black text in schedule entries */
+.schedule-text-black {
+  color: black !important;
 }
