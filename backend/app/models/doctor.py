@@ -17,6 +17,7 @@ class Doctor(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     appointments = relationship("Appointment", back_populates="doctor")
+    medical_records = relationship("MedicalRecord", back_populates="doctor")
 
     def __repr__(self):
         return f"<Doctor {self.doctor_id} {self.name}>"

@@ -21,6 +21,8 @@ class MedicalRecord(MedicalRecordBase):
     patient_id: uuid.UUID
     doctor_id: uuid.UUID
     created_at: datetime.datetime
+    doctor_name: Optional[str] = None
+    patient_name: Optional[str] = None
 
     class Config:
         from_attributes = True

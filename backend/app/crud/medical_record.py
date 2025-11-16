@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Dict, Any, Optional
 import uuid
 
@@ -13,7 +13,11 @@ def get_medical_records_by_doctor(db: Session, doctor_id: uuid.UUID, patient_id:
     query = db.query(MedicalRecord).filter(MedicalRecord.doctor_id == doctor_id)
     if patient_id:
         query = query.filter(MedicalRecord.patient_id == patient_id)
-    return query.offset(skip).limit(limit).all()
+    
+    # Eagerly load the doctor and patient relationships to avoid separate queries
+    query = query.options(joinedload(MedicalRecord.doctor), joinedload(MedicalRecord.patient))
+    
+    return query.order_by(MedicalRecord.created_at.desc()).offset(skip).limit(limit).all()
 
 def create_medical_record(db: Session, medical_record: Dict[str, Any]):
     db_medical_record = MedicalRecord(**medical_record)

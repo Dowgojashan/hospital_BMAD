@@ -356,8 +356,8 @@ const DoctorRecordsPage = () => {
             <div key={record.record_id} className="card record-card">
               <div className="record-header">
                 <div>
-                  <h3>{record.doctor_name || '醫師'}</h3>
-                  <p className="record-date">{new Date(record.created_at).toLocaleString('zh-TW')}</p>
+                  <h3>{new Date(record.created_at).toLocaleString('zh-TW')}</h3>
+                  <p className="record-date">由 {record.doctor_name || '醫師'} 處理</p>
                 </div>
                 <div>
                   <button className="btn btn-secondary" onClick={() => handleEdit(record)} style={{ marginRight: '8px' }}>

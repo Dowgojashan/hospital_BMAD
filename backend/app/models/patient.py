@@ -24,6 +24,7 @@ class Patient(Base):
     suspended_until = Column(Date, nullable=True)
 
     appointments = relationship("Appointment", back_populates="patient")
+    medical_records = relationship("MedicalRecord", back_populates="patient")
 
     def __repr__(self):
         return f"<Patient {self.patient_id} {self.card_number} {self.name}>"

@@ -43,10 +43,21 @@ def read_doctor_medical_records(
             detail="Only doctors can view their own medical records."
         )
     
-    medical_records = crud_medical_record.get_medical_records_by_doctor(
+    medical_records_from_db = crud_medical_record.get_medical_records_by_doctor(
         db=db, doctor_id=current_user["user_obj"].doctor_id, patient_id=patient_id
     )
-    return medical_records
+
+    # Manually construct the response to include names from relationships
+    response_records = []
+    for record in medical_records_from_db:
+        record_data = MedicalRecordSchema.model_validate(record)
+        if record.doctor:
+            record_data.doctor_name = record.doctor.name
+        if record.patient:
+            record_data.patient_name = record.patient.name
+        response_records.append(record_data)
+        
+    return response_records
 
 @router.get("/{record_id}", response_model=MedicalRecordSchema)
 def read_medical_record(
