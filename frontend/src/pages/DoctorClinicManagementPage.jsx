@@ -181,7 +181,7 @@ const DoctorClinicManagementPage = () => {
   };
 
   const handleMedicalRecord = (patientId) => {
-    navigate(`/doctor/medical-records/${patientId}`);
+    navigate(`/doctor/records/${patientId}`);
   };
 
   const handleMarkNoShow = async (scheduleId, checkinId) => {

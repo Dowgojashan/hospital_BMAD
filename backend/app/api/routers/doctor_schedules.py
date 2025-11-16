@@ -6,15 +6,26 @@ import uuid
 
 from app.db.session import get_db
 from app.models.doctor import Doctor
-from app.crud import crud_schedule
-from app.schemas.schedule import SchedulePublic, ScheduleDoctorPublic, DoctorLeaveRequestInput, LeaveRequestRangeCreate # Import ScheduleDoctorPublic and DoctorLeaveRequestInput
-from app.api.dependencies import get_current_active_doctor # Import the new dependency
-from app.services.schedule_service import ScheduleService # Import ScheduleService class
+from app.crud import crud_schedule, crud_doctor
+from app.schemas.schedule import SchedulePublic, ScheduleDoctorPublic, DoctorLeaveRequestInput, LeaveRequestRangeCreate
+from app.schemas.patient import PatientPublic
+from app.api.dependencies import get_current_active_doctor
+from app.services.schedule_service import ScheduleService
 
 router = APIRouter()
-schedule_service = ScheduleService() # Create an instance of the service
+schedule_service = ScheduleService()
 
-@router.get("/me/schedules", response_model=List[ScheduleDoctorPublic]) # Use ScheduleDoctorPublic
+@router.get("/me/patients", response_model=List[PatientPublic])
+def list_my_patients(
+    db: Session = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_active_doctor),
+):
+    """
+    Retrieve a list of patients who have appointments with the currently authenticated doctor.
+    """
+    return crud_doctor.get_patients_by_doctor_id(db=db, doctor_id=current_doctor.doctor_id)
+
+@router.get("/me/schedules", response_model=List[ScheduleDoctorPublic])
 def list_my_schedules(
     month: Optional[int] = Query(None, description="Filter schedules by month (1-12)"),
     year: Optional[int] = Query(None, description="Filter schedules by year"),
@@ -57,6 +68,38 @@ def submit_leave_request(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to submit leave request: {e}"
         )
+
+@router.get("/me/patients/{patient_id}", response_model=PatientPublic)
+def get_my_patient_details(
+    patient_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_active_doctor),
+):
+    """
+    Retrieve details of a specific patient that the doctor has appointments with.
+    This endpoint is for doctors to access patient information for patients they treat.
+    """
+    # First, verify that the doctor has an appointment with this patient
+    from app.models.appointment import Appointment
+    has_appointment = db.query(Appointment).filter(
+        Appointment.doctor_id == current_doctor.doctor_id,
+        Appointment.patient_id == patient_id
+    ).first()
+    
+    if not has_appointment:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only view details for patients you have appointments with."
+        )
+    
+    # Fetch the patient details
+    from app.crud.crud_user import get_patient
+    patient = get_patient(db, patient_id=patient_id)
+    
+    if not patient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+    
+    return patient
 
 @router.post("/me/leave-requests/range", response_model=List[SchedulePublic], status_code=status.HTTP_201_CREATED)
 def submit_leave_request_range(

@@ -1,7 +1,11 @@
 # backend/app/main.py
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware # Import CORSMiddleware
-from app.api.routers import auth, admin_management, schedules, patient_appointments, queue, doctor_clinic_management, user_profile, medical_records, patient_lookup
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.routers import (
+    auth, admin_management, schedules, patient_appointments,
+    queue, doctor_clinic_management, user_profile, medical_records,
+    patient_lookup, doctor_schedules
+)
 import os
 import logging
 
@@ -27,12 +31,13 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(admin_management.router, prefix="/api/v1", tags=["Admin Management"])
 app.include_router(schedules.router, prefix="/api/v1/schedules", tags=["Schedules"])
+app.include_router(patient_lookup.router, prefix="/api/v1/patients", tags=["Patient Lookup"]) # Moved up
 app.include_router(patient_appointments.router, prefix="/api/v1/patient", tags=["Patient"])
 app.include_router(queue.router, prefix="/api/v1", tags=["Queue"])
 app.include_router(doctor_clinic_management.router, prefix="/api/v1", tags=["Doctor Clinic Management"])
+app.include_router(doctor_schedules.router, prefix="/api/v1/doctor-schedules", tags=["Doctor Schedules"])
 app.include_router(user_profile.router, prefix="/api/v1/profile", tags=["User Profile"])
 app.include_router(medical_records.router, prefix="/api/v1/medical-records", tags=["Medical Records"])
-app.include_router(patient_lookup.router, prefix="/api/v1/patients", tags=["Patient Lookup"])
 
 # 僅在開發環境中包含開發工具路由
 if os.getenv("ENV") == "development":
