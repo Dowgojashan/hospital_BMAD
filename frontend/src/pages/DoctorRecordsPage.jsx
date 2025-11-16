@@ -1,12 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useParams and useNavigate
 import './DoctorRecordsPage.css';
 import api from '../api/axios'; // Use existing axios instance
 import { useAuthStore } from '../store/authStore'; // Import useAuthStore
 
 const DoctorRecordsPage = () => {
   const { user } = useAuthStore(); // Get current user from auth store
+  const { patientId: patientIdFromUrl } = useParams(); // Get patientId from URL
+  const navigate = useNavigate(); // For potential redirection if patient not found
+
   const [uniquePatients, setUniquePatients] = useState([]); // Store unique patients for the doctor
   const [selectedPatient, setSelectedPatient] = useState(null); // The patient being viewed
+  const [hasInitialPatientLoaded, setHasInitialPatientLoaded] = useState(false); // New state to track initial load from URL
   const [patientRecords, setPatientRecords] = useState([]); // Records for the selected patient
   const [showForm, setShowForm] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -49,21 +54,49 @@ const DoctorRecordsPage = () => {
       console.error('載入病歷失敗:', error);
       setPageMessage('載入病歷資料失敗，請稍後再試。');
     } finally {
-      setLoading(false);
+      setLoading(false); // Ensure loading state is reset
     }
   }, []);
 
+  // Effect to load patients on component mount
   useEffect(() => {
     loadPatients();
   }, [loadPatients]);
 
+  // Effect to handle patient selection from URL or manual click
   useEffect(() => {
-    if (selectedPatient) {
+    const selectPatientFromId = async (pId) => {
+      setLoading(true);
+      try {
+        const response = await api.get(`/api/v1/doctor-schedules/me/patients/${pId}`);
+        const patientDetails = response.data;
+        const age = patientDetails.dob ? new Date().getFullYear() - new Date(patientDetails.dob).getFullYear() : 'N/A';
+        setSelectedPatient({ ...patientDetails, age });
+        setShowForm(false); // Hide form when selecting a new patient
+        setPatientToCreateRecordFor(null); // Clear patient selected in form
+        setHasInitialPatientLoaded(true); // Mark that initial patient from URL has been loaded
+      } catch (error) {
+        console.error('載入病患詳細資訊失敗:', error);
+        setPageMessage('載入病患詳細資訊失敗，請稍後再試。');
+        setSelectedPatient(null);
+        setHasInitialPatientLoaded(false); // Reset if patient not found
+        // Optionally navigate back or show an error if patient from URL is not found
+        // navigate('/doctor/records'); 
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (patientIdFromUrl && !hasInitialPatientLoaded) {
+      selectPatientFromId(patientIdFromUrl);
+    } else if (selectedPatient) {
       loadPatientRecords(selectedPatient.patient_id);
+    } else if (!patientIdFromUrl && !selectedPatient) { // If no patient from URL and no patient selected, load the patient list
+      loadPatients();
     } else {
       setPatientRecords([]);
     }
-  }, [selectedPatient, loadPatientRecords]);
+  }, [patientIdFromUrl, selectedPatient, hasInitialPatientLoaded, loadPatientRecords, navigate, loadPatients]); // Added loadPatients to dependencies
 
   const handleSelectPatient = async (patient) => {
     setLoading(true);
@@ -74,6 +107,7 @@ const DoctorRecordsPage = () => {
       setSelectedPatient({ ...patientDetails, age });
       setShowForm(false); // Hide form when selecting a new patient
       setPatientToCreateRecordFor(null); // Clear patient selected in form
+      setHasInitialPatientLoaded(true); // Mark as loaded if manually selected
     } catch (error) {
       console.error('載入病患詳細資訊失敗:', error);
       setPageMessage('載入病患詳細資訊失敗，請稍後再試。');
@@ -81,6 +115,12 @@ const DoctorRecordsPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBackToPatientList = () => {
+    setSelectedPatient(null);
+    setHasInitialPatientLoaded(false); // Allow re-loading from URL if user navigates back and then forward
+    navigate('/doctor/records'); // Navigate to the base medical records page without patient ID
   };
 
   const handleSubmit = async (e) => {
@@ -295,7 +335,7 @@ const DoctorRecordsPage = () => {
   return (
     <div className="container">
       <div className="page-header">
-        <button className="btn btn-secondary mb-3" onClick={() => setSelectedPatient(null)}>
+        <button className="btn btn-secondary mb-3" onClick={handleBackToPatientList}>
           &larr; 返回病患列表
         </button>
         <h1 className="page-title">病歷管理：{selectedPatient.name}</h1>

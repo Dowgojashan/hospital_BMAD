@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session, joinedload
 from typing import Dict, Any, Optional
 import uuid
@@ -5,6 +6,7 @@ import uuid
 from ..models.medical_record import MedicalRecord
 from ..schemas.medical_record import MedicalRecordCreate, MedicalRecordUpdate
 
+logger = logging.getLogger(__name__)
 
 def get_medical_record(db: Session, record_id: uuid.UUID):
     return db.query(MedicalRecord).filter(MedicalRecord.record_id == record_id).first()
@@ -20,10 +22,12 @@ def get_medical_records_by_doctor(db: Session, doctor_id: uuid.UUID, patient_id:
     return query.order_by(MedicalRecord.created_at.desc()).offset(skip).limit(limit).all()
 
 def create_medical_record(db: Session, medical_record: Dict[str, Any]):
+    logger.info(f"CRUD: Received medical record data for creation: {medical_record}")
     db_medical_record = MedicalRecord(**medical_record)
     db.add(db_medical_record)
     db.commit()
     db.refresh(db_medical_record)
+    logger.info(f"CRUD: Successfully created medical record with ID: {db_medical_record.record_id}")
     return db_medical_record
 
 def update_medical_record(db: Session, db_medical_record: MedicalRecord, medical_record: MedicalRecordUpdate):

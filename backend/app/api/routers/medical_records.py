@@ -1,4 +1,5 @@
 # backend/app/api/routers/medical_records.py
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -9,6 +10,8 @@ from ...schemas.medical_record import MedicalRecordCreate, MedicalRecordUpdate, 
 from ...crud import medical_record as crud_medical_record
 from ..dependencies import get_current_user
 from ...models.medical_record import MedicalRecord as MedicalRecordModel
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -27,6 +30,7 @@ def create_medical_record(
     # Ensure the doctor_id is set to the current user's ID
     medical_record_data = medical_record.dict()
     medical_record_data["doctor_id"] = current_user["user_obj"].doctor_id
+    logger.info(f"Attempting to create medical record with data: {medical_record_data}")
 
     db_medical_record = crud_medical_record.create_medical_record(db=db, medical_record=medical_record_data)
     return db_medical_record
