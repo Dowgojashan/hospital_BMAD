@@ -52,6 +52,9 @@ class AppointmentCRUD:
             db.refresh(db_obj)
         return db_obj
 
+    def get_multi_by_schedule_id(self, db: Session, schedule_id: uuid.UUID, skip: int = 0, limit: int = 100) -> List[Appointment]:
+        return db.query(Appointment).filter(Appointment.schedule_id == schedule_id).offset(skip).limit(limit).all()
+
     def remove(self, db: Session, *, appointment_id: uuid.UUID) -> Optional[Appointment]:
         obj = db.query(Appointment).filter(Appointment.appointment_id == appointment_id).first()
         if obj:

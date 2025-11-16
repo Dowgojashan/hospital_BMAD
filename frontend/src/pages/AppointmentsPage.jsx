@@ -110,6 +110,7 @@ const AppointmentsPage = () => {
       in_consult: { label: '看診中', class: 'badge-info' },
       completed: { label: '已完成', class: 'badge-success' },
       no_show: { label: '未到診', class: 'badge-danger' },
+      seen: { label: '已看診', class: 'badge-success' }, // Add this line
     };
     const statusInfo = statusMap[status] || { label: status, class: 'badge-info' };
     return <span className={`badge ${statusInfo.class}`}>{statusInfo.label}</span>;
@@ -125,8 +126,8 @@ const AppointmentsPage = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (filter === 'upcoming') return aptDate >= today && apt.status !== 'cancelled' && apt.status !== 'completed' && apt.status !== 'no_show';
-    if (filter === 'past') return aptDate < today || apt.status === 'cancelled' || apt.status === 'completed' || apt.status === 'no_show';
+    if (filter === 'upcoming') return aptDate >= today && apt.status !== 'cancelled' && apt.status !== 'completed' && apt.status !== 'no_show' && apt.status !== 'seen';
+    if (filter === 'past') return aptDate < today || apt.status === 'cancelled' || apt.status === 'completed' || apt.status === 'no_show' || apt.status === 'seen';
     return true;
   });
 

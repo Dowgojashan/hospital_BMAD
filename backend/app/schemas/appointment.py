@@ -10,7 +10,7 @@ class AppointmentBase(BaseModel):
     doctor_id: uuid.UUID
     date: date
     time_period: str = Field(..., pattern="^(morning|afternoon|night)$")
-    status: str = Field("scheduled", pattern="^(scheduled|confirmed|waitlist|cancelled|checked_in|waiting|called|in_consult|completed|no_show)$")
+    status: str = Field("scheduled", pattern="^(scheduled|confirmed|waitlist|cancelled|checked_in|waiting|called|in_consult|completed|no_show|seen)$")
 
 # Properties to receive via API on creation
 class AppointmentCreate(BaseModel):

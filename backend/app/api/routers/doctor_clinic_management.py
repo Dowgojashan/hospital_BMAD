@@ -11,7 +11,7 @@ from app.models.doctor import Doctor
 from app.models.schedule import Schedule
 from app.models.checkin import Checkin
 from app.models.patient import Patient
-from app.crud import crud_schedule, crud_checkin, crud_user, crud_leave_request, crud_room_day # Import room_day instance
+from app.crud import crud_schedule, crud_checkin, crud_user, crud_leave_request, crud_room_day, crud_appointment # Import room_day instance and crud_appointment
 from app.schemas.room_day import RoomDayCreate
 from app.schemas.schedule import SchedulePublic # 假設 SchedulePublic 存在
 from app.schemas.leave_request import LeaveRequestCreate, LeaveRequestRangeCreate # 導入請假申請 schema
@@ -275,6 +275,13 @@ async def call_next_patient(
         db.commit()
         db.refresh(called_patient_checkin)
 
+        # Update the corresponding Appointment status to "seen"
+        crud_appointment.appointment_crud.update_status(
+            db,
+            appointment_id=called_patient_checkin.appointment_id,
+            new_status="seen"
+        )
+
     # TODO: 發送通知給被叫號的病患
 
     return {"message": f"已叫號至 A{room_day.current_called_sequence:03d}。"}
@@ -301,26 +308,38 @@ async def get_waiting_patients(
     if not room_day:
         return [] # 如果診間未開診，則沒有候診病患
 
-    checked_in_patients = crud_checkin.checkin.get_checked_in_patients_for_schedule(db, schedule_id=schedule_id)
+    # Fetch all appointments for the schedule
+    appointments = crud_appointment.appointment_crud.get_multi_by_schedule_id(db, schedule_id=schedule_id)
     
-    # 篩選出所有已報到或已看診的病患，並按號碼排序
     waiting_list = []
-    for checkin in checked_in_patients:
-        # 包含所有 'checked_in' 和 'seen' 狀態的病患
-        if checkin.status in ["checked_in", "seen"]:
-            patient = crud_user.get_patient(db, patient_id=checkin.patient_id) # 假設 crud_user.get_patient 存在
-            if patient:
-                waiting_list.append({
-                    "patient_id": patient.patient_id,
-                    "patient_name": patient.name,
+    for appointment_obj in appointments:
+        checkin = crud_checkin.checkin.get_by_appointment_id(db, appointment_id=appointment_obj.appointment_id)
+        patient = crud_user.get_patient(db, patient_id=appointment_obj.patient_id)
+
+        if patient:
+            patient_info = {
+                "patient_id": patient.patient_id,
+                "patient_name": patient.name,
+                "appointment_id": appointment_obj.appointment_id,
+                "status": "pending", # Default status if not checked in
+                "ticket_number": "N/A",
+                "ticket_sequence": float('inf'), # Place pending patients at the end
+                "checkin_time": None,
+                "checkin_id": None,
+            }
+
+            if checkin:
+                patient_info.update({
+                    "status": checkin.status,
                     "ticket_number": checkin.ticket_number,
                     "ticket_sequence": checkin.ticket_sequence,
                     "checkin_time": checkin.checkin_time,
-                    "appointment_id": checkin.appointment_id,
                     "checkin_id": checkin.checkin_id,
-                    "status": checkin.status # Add status here
                 })
+            
+            waiting_list.append(patient_info)
     
+    # Sort by ticket_sequence, so checked-in patients appear first, then pending
     waiting_list.sort(key=lambda x: x["ticket_sequence"])
     return waiting_list
 
@@ -377,3 +396,32 @@ async def re_check_in_patient(
         import traceback
         traceback.print_exc() # Print the full traceback to the console
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"補報到失敗: {e}")
+
+@router.post("/doctor/schedules/{schedule_id}/appointments/{appointment_id}/check-in", status_code=status.HTTP_200_OK)
+async def doctor_manual_check_in(
+    schedule_id: uuid.UUID,
+    appointment_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_doctor: Doctor = Depends(get_current_active_doctor)
+):
+    """
+    醫生手動為病患進行報到。
+    """
+    schedule = crud_schedule.get_schedule(db, schedule_id=schedule_id)
+    if not schedule or schedule.doctor_id != current_doctor.doctor_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found or does not belong to this doctor.")
+    
+    if schedule.date != _get_taiwan_current_date():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能操作今日班表的報到記錄。")
+
+    try:
+        queue_service = QueueService(db)
+        result = await queue_service.manual_check_in(schedule_id=schedule_id, appointment_id=appointment_id)
+        return result
+    except HTTPException as e:
+        print(f"HTTPException caught in doctor_manual_check_in: Status {e.status_code}, Detail: {e.detail}")
+        raise e
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"手動報到失敗: {e}")

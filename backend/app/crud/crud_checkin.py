@@ -33,6 +33,9 @@ class CRUDCheckin:
             Appointment.schedule_id == schedule_id
         ).order_by(Checkin.ticket_sequence.asc()).all()
 
+    def get_by_appointment_id(self, db: Session, appointment_id: uuid.UUID) -> Optional[Checkin]:
+        return db.query(Checkin).filter(Checkin.appointment_id == appointment_id).first()
+
     def get_checkin_by_schedule_id_and_sequence(self, db: Session, schedule_id: uuid.UUID, ticket_sequence: int) -> Optional[Checkin]:
         """
         根據 schedule_id 和 ticket_sequence 獲取 Checkin 記錄。

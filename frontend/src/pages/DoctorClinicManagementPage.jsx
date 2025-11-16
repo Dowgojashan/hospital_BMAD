@@ -20,6 +20,8 @@ const getTranslatedStatus = (status) => {
       return '未到診';
     case 'seen':
       return '已看診';
+    case 'pending': // New status for un-checked-in appointments
+      return '未報到';
     default:
       return status;
   }
@@ -226,6 +228,28 @@ const DoctorClinicManagementPage = () => {
     }
   };
 
+  const handleCheckIn = async (scheduleId, appointmentId) => {
+    if (!window.confirm('確定要為此病患進行報到嗎？')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Assuming a backend endpoint for doctor manual check-in exists
+      await api.post(`/api/v1/doctor/schedules/${scheduleId}/appointments/${appointmentId}/check-in`);
+      alert('病患已成功報到！');
+      setMessage('病患已成功報到！');
+      loadQueueStatusForAllSchedules(); // Reload queue status
+      loadWaitingPatientsForAllSchedules(); // Reload waiting patients
+    } catch (error) {
+      console.error('報到失敗:', error);
+      alert('報到失敗，請稍後再試。');
+      setMessage('報到失敗，請稍後再試。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   if (loading) {
     return <div className="container">載入中...</div>;
@@ -315,7 +339,9 @@ const DoctorClinicManagementPage = () => {
                         </div>
                         <div className="patient-actions">
                           <button className="btn btn-info btn-sm" onClick={() => handleMedicalRecord(patient.patient_id)}>病歷管理</button>
-                          {patient.status === 'no_show' ? (
+                          {patient.status === 'pending' ? (
+                            <button className="btn btn-primary btn-sm" onClick={() => handleCheckIn(schedule.schedule_id, patient.appointment_id)}>報到</button>
+                          ) : patient.status === 'no_show' ? (
                             <button className="btn btn-success btn-sm" onClick={() => handleReCheckIn(schedule.schedule_id, patient.checkin_id)}>補報到</button>
                           ) : (
                             <button className="btn btn-danger btn-sm" onClick={() => handleMarkNoShow(schedule.schedule_id, patient.checkin_id)}>未到</button>

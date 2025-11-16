@@ -1,16 +1,19 @@
-from sqlalchemy.orm import Session, joinedload
-from datetime import date, datetime, timedelta
+from app.crud.queue_crud import QueueCRUD
+from app.crud.crud_appointment import appointment_crud
+from app.crud.visit_call_crud import VisitCallCRUD
+from app.services.notification_service import NotificationService
+from app.services.infraction_service import InfractionService
+from app.models.appointment import Appointment
+from app.models.room_day import RoomDay
+from app.models.checkin import Checkin
 from uuid import UUID
-
-from ..crud.queue_crud import QueueCRUD
-from ..crud.crud_appointment import appointment_crud # Corrected import
-from ..crud.visit_call_crud import VisitCallCRUD # Assuming VisitCallCRUD exists
-from ..models.room_day import RoomDay
-from ..models.checkin import Checkin
-from ..models.appointment import Appointment
-from ..services.notification_service import NotificationService
-from ..services.infraction_service import InfractionService # Assuming InfractionService exists
-from fastapi import HTTPException, status # Import HTTPException and status
+import pytz # Import pytz
+from datetime import date, datetime, timedelta
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session, joinedload
+from app.crud.crud_checkin import checkin as crud_checkin_instance # Import the instance
+import app.crud.crud_checkin as crud_checkin
+from app.schemas.checkin import CheckinCreate # Import CheckinCreate schema
 
 class QueueService:
     def __init__(self, db: Session):
@@ -230,3 +233,58 @@ class QueueService:
             self.appointment_crud.update_status(self.db, appointment_id=appointment.appointment_id, new_status="checked_in")
         
         return {"message": "病患已成功補報到。", "new_ticket_number": checkin.ticket_number, "new_ticket_sequence": checkin.ticket_sequence}
+
+    async def manual_check_in(self, schedule_id: UUID, appointment_id: UUID):
+        appointment = self.appointment_crud.get(self.db, appointment_id)
+        if not appointment or appointment.schedule_id != schedule_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="預約記錄未找到或不屬於此班表。")
+        
+        if appointment.date != datetime.now(pytz.timezone('Asia/Taipei')).date(): # Assuming check-in is only for today's appointments
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="只能為今日的預約進行報到。")
+
+        room_day = self.db.query(RoomDay).filter(RoomDay.schedule_id == schedule_id).first()
+        if not room_day:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="診間尚未開診，無法報到。")
+
+        # Check if checkin already exists
+        existing_checkin = self.db.query(Checkin).filter(Checkin.appointment_id == appointment_id).first()
+
+        if existing_checkin:
+            if existing_checkin.status == "checked_in":
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="病患已報到。")
+            
+            # If status is no_show, re-check-in them
+            if existing_checkin.status == "no_show":
+                return await self.re_check_in(existing_checkin.checkin_id)
+            
+            # For other statuses, update to checked_in
+            existing_checkin.status = "checked_in"
+            self.db.add(existing_checkin)
+            self.db.commit()
+            self.db.refresh(existing_checkin)
+            return {"message": "病患已成功報到。", "ticket_number": existing_checkin.ticket_number, "ticket_sequence": existing_checkin.ticket_sequence}
+
+        # Create new checkin record
+        new_ticket_sequence = room_day.next_sequence
+        room_day.next_sequence += 1
+        self.db.add(room_day)
+        self.db.flush() # Flush to get updated room_day.next_sequence
+
+        # Generate ticket number (e.g., A001, A002)
+        ticket_number = f"A{new_ticket_sequence:03d}"
+
+        checkin_create_data = {
+            "appointment_id": appointment_id,
+            "patient_id": appointment.patient_id,
+            "checkin_time": datetime.now(),
+            "checkin_method": "onsite", # Indicate manual check-in by doctor
+            "ticket_sequence": new_ticket_sequence,
+            "ticket_number": ticket_number,
+            "status": "checked_in"
+        }
+        new_checkin = crud_checkin.checkin.create(db=self.db, obj_in=CheckinCreate(**checkin_create_data)) # Assuming create_checkin in QueueCRUD
+
+        # Update Appointment status
+        self.appointment_crud.update_status(self.db, appointment_id=appointment_id, new_status="checked_in")
+
+        return {"message": "病患已成功報到。", "ticket_number": new_checkin.ticket_number, "ticket_sequence": new_checkin.ticket_sequence}
