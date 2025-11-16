@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from app.models.checkin import Checkin
 from app.models.appointment import Appointment # Import Appointment model
@@ -32,5 +32,14 @@ class CRUDCheckin:
         return db.query(Checkin).join(Appointment).filter(
             Appointment.schedule_id == schedule_id
         ).order_by(Checkin.ticket_sequence.asc()).all()
+
+    def get_checkin_by_schedule_id_and_sequence(self, db: Session, schedule_id: uuid.UUID, ticket_sequence: int) -> Optional[Checkin]:
+        """
+        根據 schedule_id 和 ticket_sequence 獲取 Checkin 記錄。
+        """
+        return db.query(Checkin).join(Appointment).filter(
+            Appointment.schedule_id == schedule_id,
+            Checkin.ticket_sequence == ticket_sequence
+        ).first()
 
 checkin = CRUDCheckin()

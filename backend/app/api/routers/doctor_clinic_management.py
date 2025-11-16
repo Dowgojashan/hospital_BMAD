@@ -263,6 +263,18 @@ async def call_next_patient(
     db.commit()
     db.refresh(room_day)
 
+    # 找到被叫號的病患並更新其狀態為 'seen'
+    called_patient_checkin = crud_checkin.checkin.get_checkin_by_schedule_id_and_sequence(
+        db,
+        schedule_id=schedule_id,
+        ticket_sequence=room_day.current_called_sequence
+    )
+    if called_patient_checkin:
+        called_patient_checkin.status = "seen"
+        db.add(called_patient_checkin)
+        db.commit()
+        db.refresh(called_patient_checkin)
+
     # TODO: 發送通知給被叫號的病患
 
     return {"message": f"已叫號至 A{room_day.current_called_sequence:03d}。"}
@@ -291,10 +303,11 @@ async def get_waiting_patients(
 
     checked_in_patients = crud_checkin.checkin.get_checked_in_patients_for_schedule(db, schedule_id=schedule_id)
     
-    # 篩選出尚未被叫號的病患，並按號碼排序
+    # 篩選出所有已報到或已看診的病患，並按號碼排序
     waiting_list = []
     for checkin in checked_in_patients:
-        if checkin.ticket_sequence > room_day.current_called_sequence:
+        # 包含所有 'checked_in' 和 'seen' 狀態的病患
+        if checkin.status in ["checked_in", "seen"]:
             patient = crud_user.get_patient(db, patient_id=checkin.patient_id) # 假設 crud_user.get_patient 存在
             if patient:
                 waiting_list.append({
