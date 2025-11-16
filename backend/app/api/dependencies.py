@@ -2,6 +2,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import uuid
+import logging
+from jose import JWTError
+
+logger = logging.getLogger(__name__)
 
 from app.db.session import get_db
 from app.core.security import verify_token
@@ -25,8 +29,13 @@ async def get_current_user(
         user_id: str = payload.get("sub")
         user_role: str = payload.get("role")
         if user_id is None or user_role is None:
+            logger.warning("Token payload missing user_id or role.")
             raise credentials_exception
-    except Exception:
+    except JWTError as e:
+        logger.error(f"JWTError during token verification: {e}")
+        raise credentials_exception
+    except Exception as e:
+        logger.error(f"Unexpected error during token verification: {e}")
         raise credentials_exception
 
     user = None

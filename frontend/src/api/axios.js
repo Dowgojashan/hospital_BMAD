@@ -11,6 +11,7 @@ api.interceptors.request.use((config) => {
     config.headers = config.headers || {}
     config.headers.Authorization = `Bearer ${token}`
   }
+  console.log('Axios Request Interceptor - Authorization Header:', config.headers.Authorization); // Add this line
   return config
 })
 

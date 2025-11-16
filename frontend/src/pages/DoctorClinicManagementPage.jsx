@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './DoctorClinicManagementPage.css';
 import api from '../api/axios';
 import { useAuthStore } from '../store/authStore';
@@ -25,6 +26,7 @@ const getTranslatedStatus = (status) => {
 };
 
 const DoctorClinicManagementPage = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [todaySchedules, setTodaySchedules] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -179,8 +181,7 @@ const DoctorClinicManagementPage = () => {
   };
 
   const handleMedicalRecord = (patientId) => {
-    alert(`病歷管理功能尚未實作，病患 ID: ${patientId}`);
-    // TODO: Implement navigation to medical record page
+    navigate(`/doctor/medical-records/${patientId}`);
   };
 
   const handleMarkNoShow = async (scheduleId, checkinId) => {

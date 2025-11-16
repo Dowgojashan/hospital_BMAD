@@ -70,7 +70,7 @@ function AppContent() {
         <Route path="/records" element={<ProtectedRoute><MedicalRecordsPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/doctor/schedules" element={<ProtectedRoute><DoctorSchedulesPage /></ProtectedRoute>} />
-        <Route path="/doctor/records" element={<ProtectedRoute><DoctorRecordsPage /></ProtectedRoute>} />
+        <Route path="/doctor/records/:patientId?" element={<ProtectedRoute><DoctorRecordsPage /></ProtectedRoute>} />
         <Route path="/doctor/leave" element={<ProtectedRoute><LeaveRequestPage /></ProtectedRoute>} />
         <Route path="/doctor/clinic-management" element={<ProtectedRoute><DoctorClinicManagementPage /></ProtectedRoute>} />
         <Route path="/admin/dashboard" element={<ProtectedAdminRoute><AdminDashboardPage /></ProtectedAdminRoute>} />
