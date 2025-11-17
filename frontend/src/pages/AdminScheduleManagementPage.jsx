@@ -63,7 +63,8 @@ const AdminScheduleManagementPage = () => {
           .filter((doc) => doc.specialty === selectedSpecialty)
           .map((doc) => doc.id);
         if (doctorIdsInSpecialty.length > 0) {
-          params.doctor_ids = doctorIdsInSpecialty.join(',');
+          // Pass the array directly, axios will handle the serialization
+          params.doctor_ids = doctorIdsInSpecialty;
         } else {
           setSchedules([]);
           setLoading(false);

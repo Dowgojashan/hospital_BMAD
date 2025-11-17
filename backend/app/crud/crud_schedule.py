@@ -256,63 +256,54 @@ def list_public_schedules(db: Session, specialty: Optional[str] = None, doctor_i
     return results
 
 
+def _add_months(source_date, months):
+    month = source_date.month - 1 + months
+    year = source_date.year + month // 12
+    month = month % 12 + 1
+    day = min(source_date.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
 def create_recurring_schedules(db: Session, schedule_in: ScheduleRecurringCreate) -> List[Schedule]:
     recurring_group_id = uuid.uuid4()
     created_schedules = []
     
-    current_iteration_date = schedule_in.start_date
-
-    for i in range(schedule_in.months_to_create):
-        year = current_iteration_date.year
-        month = current_iteration_date.month
-
-        # Get the number of days in the current month
-        num_days = calendar.monthrange(year, month)[1]
-
-        for day in range(1, num_days + 1):
-            temp_date = date(year, month, day)
-            
-            # Check if the day matches the recurring day of the week
-            # and if it's on or after the start_date
-            if temp_date.weekday() == schedule_in.day_of_week and temp_date >= schedule_in.start_date:
-                # # Prevent creating schedules for the current day, unless testing is enabled
-                # if temp_date == date.today() and os.getenv("ALLOW_SAME_DAY_OPERATIONS_FOR_TESTING", "false").lower() != "true":
-                #     raise HTTPException(
-                #         status_code=status.HTTP_400_BAD_REQUEST,
-                #         detail=f"不允許新增當天的班表 (日期: {temp_date})"
-                #     )
-                # Check for existing schedule for the same doctor, date, and time_period
-                existing_schedule = (
-                    db.query(Schedule)
-                    .filter(
-                        Schedule.doctor_id == schedule_in.doctor_id,
-                        Schedule.date == temp_date,
-                        Schedule.time_period == schedule_in.time_period,
-                    )
-                    .first()
+    # Calculate the end date based on the number of months
+    end_date = _add_months(schedule_in.start_date, schedule_in.months_to_create)
+    
+    current_date = schedule_in.start_date
+    while current_date < end_date:
+        # Check if the current day matches the recurring day of the week
+        if current_date.weekday() == schedule_in.day_of_week:
+            # Check for existing schedule for the same doctor, date, and time_period
+            existing_schedule = (
+                db.query(Schedule)
+                .filter(
+                    Schedule.doctor_id == schedule_in.doctor_id,
+                    Schedule.date == current_date,
+                    Schedule.time_period == schedule_in.time_period,
                 )
-                if existing_schedule:
-                    raise HTTPException(
-                        status_code=status.HTTP_409_CONFLICT,
-                        detail=f"A schedule already exists for this doctor on {temp_date} at {schedule_in.time_period}.",
-                    )
-
-                db_schedule = Schedule(
-                    doctor_id=schedule_in.doctor_id,
-                    date=temp_date,
-                    time_period=schedule_in.time_period,
-                    max_patients=schedule_in.max_patients,
-                    booked_patients=0,
-                    recurring_group_id=recurring_group_id,
+                .first()
+            )
+            if existing_schedule:
+                # Instead of raising an error, we could skip or log this.
+                # For now, we'll raise to notify the user of the conflict.
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"A schedule already exists for this doctor on {current_date} at {schedule_in.time_period}.",
                 )
-                db.add(db_schedule)
-                created_schedules.append(db_schedule)
+
+            db_schedule = Schedule(
+                doctor_id=schedule_in.doctor_id,
+                date=current_date,
+                time_period=schedule_in.time_period,
+                max_patients=schedule_in.max_patients,
+                booked_patients=0,
+                recurring_group_id=recurring_group_id,
+            )
+            db.add(db_schedule)
+            created_schedules.append(db_schedule)
         
-        # Move to the first day of the next month for the next iteration
-        if month == 12:
-            current_iteration_date = date(year + 1, 1, 1)
-        else:
-            current_iteration_date = date(year, month + 1, 1)
+        current_date += timedelta(days=1)
 
     db.commit()
     for schedule in created_schedules:
