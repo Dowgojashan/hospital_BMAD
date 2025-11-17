@@ -5,19 +5,6 @@ import React, { useState, useEffect } from 'react';
 import './AdminDashboardPage.css';
 import api from '../api/axios'; // Use existing axios instance
 
-// Mock data for dashboard stats (temporary)
-const mockDashboardStats = {
-  total_appointments_today: 120,
-  checked_in_count: 85,
-  waiting_count: 15,
-  completed_count: 70,
-  clinic_load: [
-    { clinic_id: 'clinic-1', clinic_name: '內科診間', current_patients: 5, waiting_count: 3 },
-    { clinic_id: 'clinic-2', clinic_name: '外科診間', current_patients: 8, waiting_count: 7 },
-    { clinic_id: 'clinic-3', clinic_name: '小兒科診間', current_patients: 3, waiting_count: 1 },
-  ],
-};
-
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,18 +17,25 @@ const AdminDashboardPage = () => {
 
   const loadStats = async () => {
     try {
-      // TODO: Integrate with actual API endpoint for fetching dashboard stats
-      // const response = await api.get('/api/v1/admin/dashboard-stats');
-      // setStats(response.data);
-
-      // Using mock data for now
-      setTimeout(() => {
-        setStats(mockDashboardStats);
-        setLoading(false);
-      }, 500);
+      const response = await api.get('/api/v1/admin/dashboard-stats');
+      setStats(response.data);
+      setLoading(false);
     } catch (error) {
       console.error('載入統計資料失敗:', error);
       setLoading(false);
+    }
+  };
+
+  const getTimePeriodDisplayName = (timePeriod) => {
+    switch (timePeriod) {
+      case 'morning':
+        return '上午';
+      case 'afternoon':
+        return '下午';
+      case 'night':
+        return '夜間';
+      default:
+        return timePeriod;
     }
   };
 
@@ -103,6 +97,8 @@ const AdminDashboardPage = () => {
                 <thead>
                   <tr>
                     <th>診間</th>
+                    <th>科別</th>
+                    <th>時段</th>
                     <th>當前病患數</th>
                     <th>候診人數</th>
                     <th>負載狀態</th>
@@ -112,6 +108,8 @@ const AdminDashboardPage = () => {
                   {stats.clinic_load.map((clinic) => (
                     <tr key={clinic.clinic_id}>
                       <td>{clinic.clinic_name}</td>
+                      <td>{clinic.specialty}</td>
+                      <td>{getTimePeriodDisplayName(clinic.time_period)}</td>
                       <td>{clinic.current_patients}</td>
                       <td>{clinic.waiting_count}</td>
                       <td>

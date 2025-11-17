@@ -17,6 +17,8 @@ from app.schemas.admin import AdminCreate, AdminUpdate, AdminPublic
 from app.schemas.doctor import DoctorCreate, DoctorUpdate, DoctorPublic
 from app.schemas.patient import PatientCreate, PatientUpdate, PatientPublic # Import Patient schemas
 from app.schemas.audit_log import AuditLogPublic # Import AuditLogPublic
+from app.schemas.dashboard import DashboardStats # Import DashboardStats
+from app.services.dashboard_service import get_admin_dashboard_stats # Import dashboard service
 
 router = APIRouter()
 
@@ -45,6 +47,19 @@ async def get_current_active_admin(db: Session = Depends(get_db), token: str = D
     if admin is None:
         raise credentials_exception
     return admin
+
+
+# Admin Dashboard Endpoints
+@router.get("/admin/dashboard-stats", response_model=DashboardStats)
+def get_dashboard_stats_endpoint(
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_active_admin),
+):
+    """
+    Retrieve administrative dashboard statistics.
+    """
+    stats = get_admin_dashboard_stats(db=db)
+    return stats
 
 
 # Audit Log Endpoints

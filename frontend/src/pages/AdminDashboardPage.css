@@ -42,3 +42,25 @@
 .clinic-load-table {
   overflow-x: auto;
 }
+
+
+.clinic-load-table th,
+.clinic-load-table td {
+  text-align: left;
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+
+.clinic-load-table th:last-child,
+.clinic-load-table td:last-child {
+  text-align: center;
+}
+
+
+.clinic-load-table th:nth-child(4),
+.clinic-load-table td:nth-child(4),
+.clinic-load-table th:nth-child(5),
+.clinic-load-table td:nth-child(5) {
+  text-align: center;
+}
