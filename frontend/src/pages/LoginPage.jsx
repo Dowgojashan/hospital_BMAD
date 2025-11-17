@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState(null)
   const navigate = useNavigate()
   const setToken = useAuthStore((s) => s.setToken)
+  const setFullUser = useAuthStore((s) => s.setFullUser);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -27,8 +28,12 @@ export default function LoginPage() {
       const { access_token } = resp.data
       setToken(access_token)
 
-      const decodedToken = decodeToken(access_token)
-      if (decodedToken && decodedToken.role === 'admin') {
+      // Now fetch the full user profile
+      const profileResp = await api.get('/api/v1/profile/me');
+      setFullUser(profileResp.data);
+
+      const user = useAuthStore.getState().user;
+      if (user && user.role === 'admin') {
         navigate('/admin/account-management')
       } else {
         navigate('/dashboard')

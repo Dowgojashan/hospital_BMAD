@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 import uuid
 from datetime import date
@@ -9,7 +10,14 @@ from app.db.session import get_db
 from app.models.admin import Admin
 from app.models.doctor import Doctor
 from app.crud import crud_schedule, crud_doctor
-from app.schemas.schedule import ScheduleCreate, ScheduleUpdate, SchedulePublic, ScheduleRecurringCreate
+from app.schemas.schedule import (
+    ScheduleCreate,
+    ScheduleUpdate,
+    SchedulePublic,
+    ScheduleRecurringCreate,
+    ScheduleRecurringUpdate,
+)
+from app.models.schedule import Schedule
 from app.api.routers.admin_management import get_current_active_admin
 
 router = APIRouter()
@@ -120,19 +128,63 @@ def update_schedule_endpoint(
         raise e
 
 
+
+
+# ... (other code)
+
+from sqlalchemy import func
+
+...
+
 @router.put("/recurring/{recurring_group_id}", response_model=List[SchedulePublic])
 def update_recurring_schedules_endpoint(
     recurring_group_id: uuid.UUID,
-    schedule_in: ScheduleRecurringCreate,
+    schedule_in: ScheduleRecurringUpdate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    # For recurring updates, we verify the department of the doctor_id in the payload
-    _verify_doctor_department(db, schedule_in.doctor_id, current_admin)
+    """
+    Update properties (like time_period, max_patients) for all schedules in a recurring group.
+    If day_of_week is provided, the entire recurring schedule will be recreated.
+    """
+    # We need to find one schedule in the group to verify department access
+    first_schedule = db.query(Schedule).filter(Schedule.recurring_group_id == recurring_group_id).first()
+    if not first_schedule:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recurring group not found")
+    
+    _verify_schedule_department(db, first_schedule.schedule_id, current_admin)
+
     try:
-        return crud_schedule.update_recurring_schedules(
-            db=db, recurring_group_id=recurring_group_id, schedule_in=schedule_in
-        )
+        if schedule_in.day_of_week is not None:
+            # Recreate the recurring schedules
+            if schedule_in.time_period is None or schedule_in.max_patients is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="time_period and max_patients are required when changing the day_of_week")
+
+            # Calculate months_to_create from existing schedules
+            dates = db.query(func.min(Schedule.date), func.max(Schedule.date)).filter(Schedule.recurring_group_id == recurring_group_id).one()
+            min_date, max_date = dates
+            if not min_date or not max_date:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Could not determine date range for recurring group.")
+
+            months_to_create = (max_date.year - min_date.year) * 12 + (max_date.month - min_date.month) + 1
+
+
+            recreate_input = ScheduleRecurringCreate(
+                doctor_id=first_schedule.doctor_id,
+                start_date=min_date,
+                months_to_create=months_to_create,
+                day_of_week=schedule_in.day_of_week,
+                time_period=schedule_in.time_period,
+                max_patients=schedule_in.max_patients,
+            )
+            return crud_schedule.recreate_recurring_schedules(
+                db=db, recurring_group_id=recurring_group_id, schedule_in=recreate_input
+            )
+        else:
+            # Update existing recurring schedules
+            return crud_schedule.update_recurring_schedules(
+                db=db, recurring_group_id=recurring_group_id, schedule_in=schedule_in
+            )
     except HTTPException as e:
         logger.error(f"Error updating recurring schedules for group {recurring_group_id}: {e.detail}")
         raise e

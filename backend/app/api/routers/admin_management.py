@@ -176,12 +176,30 @@ def delete_admin_endpoint(
 
 
 # Doctor Management Endpoints
+def _get_and_verify_doctor_access(db: Session, doctor_id: uuid.UUID, current_admin: Admin) -> Doctor:
+    """Fetches a doctor and verifies that the current admin has access."""
+    doctor = crud_doctor.get_doctor(db=db, doctor_id=doctor_id)
+    if not doctor:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
+    
+    if not current_admin.is_system_admin and doctor.specialty != current_admin.department:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="權限不足：您只能存取您所在科別的醫生帳號"
+        )
+    return doctor
+
 @router.post("/doctors/", response_model=DoctorPublic, status_code=status.HTTP_201_CREATED)
 def create_doctor_endpoint(
     doctor_in: DoctorCreate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
+    if not current_admin.is_system_admin and doctor_in.specialty != current_admin.department:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"權限不足：您只能為您所在的科別 ({current_admin.department}) 建立醫生帳號"
+        )
     db_doctor = crud_doctor.create_doctor(db=db, doctor_in=doctor_in)
     return db_doctor
 
@@ -207,9 +225,7 @@ def get_doctor_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    doctor = crud_doctor.get_doctor(db=db, doctor_id=doctor_id)
-    if not doctor:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
+    doctor = _get_and_verify_doctor_access(db, doctor_id, current_admin)
     return doctor
 
 
@@ -220,10 +236,19 @@ def update_doctor_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    doctor = crud_doctor.update_doctor(db=db, doctor_id=doctor_id, doctor_in=doctor_in)
-    if not doctor:
+    doctor = _get_and_verify_doctor_access(db, doctor_id, current_admin)
+    
+    # Prevent department admin from changing specialty to another department
+    if not current_admin.is_system_admin and doctor_in.specialty and doctor_in.specialty != current_admin.department:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"權限不足：您不能將醫生移轉至其他科別"
+        )
+
+    updated_doctor = crud_doctor.update_doctor(db=db, doctor_id=doctor_id, doctor_in=doctor_in)
+    if not updated_doctor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
-    return doctor
+    return updated_doctor
 
 
 @router.delete("/doctors/{doctor_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -232,6 +257,7 @@ def delete_doctor_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
+    _get_and_verify_doctor_access(db, doctor_id, current_admin)
     doctor = crud_doctor.delete_doctor(db=db, doctor_id=doctor_id)
     if not doctor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Doctor not found")
