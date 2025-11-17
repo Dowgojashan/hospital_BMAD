@@ -57,20 +57,50 @@ def get_dashboard_stats_endpoint(
 ):
     """
     Retrieve administrative dashboard statistics.
+    - System admins see all departments.
+    - Department admins see only their own department.
     """
-    stats = get_admin_dashboard_stats(db=db)
+    department = None
+    if not current_admin.is_system_admin:
+        department = current_admin.department
+
+    stats = get_admin_dashboard_stats(db=db, department=department)
     return stats
 
 
 
 
 # Admin Management Endpoints
+def _get_and_verify_admin_access(db: Session, target_admin_id: uuid.UUID, current_admin: Admin) -> Admin:
+    """Fetches a target admin and verifies that the current admin has access."""
+    target_admin = crud_admin.get_admin_by_id(db=db, admin_id=target_admin_id)
+    if not target_admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
+    
+    # Rule: Non-system admins cannot access system admins
+    if target_admin.is_system_admin and not current_admin.is_system_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="權限不足：一般管理員不能存取系統管理員帳號")
+        
+    # Rule: Non-system admins can only access admins in their own department
+    if not current_admin.is_system_admin and target_admin.department != current_admin.department:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="權限不足：您只能存取您所在科別的管理員帳號")
+
+    return target_admin
+
 @router.post("/admins/", response_model=AdminPublic, status_code=status.HTTP_201_CREATED)
 def create_admin_endpoint(
     admin_in: AdminCreate,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
+    if not current_admin.is_system_admin:
+        # Rule: Non-system admins cannot create system admins
+        if admin_in.is_system_admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="權限不足：您不能建立系統管理員帳號")
+        # Rule: Non-system admins can only create admins for their own department
+        if admin_in.department != current_admin.department:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"權限不足：您只能建立您所在科別 ({current_admin.department}) 的管理員帳號")
+
     db_admin = crud_admin.create_admin(db=db, admin_in=admin_in)
     return db_admin
 
@@ -82,7 +112,18 @@ def list_admins_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    admins = crud_admin.list_admins(db=db, skip=skip, limit=limit)
+    if current_admin.is_system_admin:
+        # System admin can see all admins
+        admins = crud_admin.list_admins(db=db, skip=skip, limit=limit)
+    else:
+        # Department admin can only see non-system admins in their own department
+        admins = crud_admin.list_admins(
+            db=db, 
+            department=current_admin.department, 
+            is_system_admin=False, 
+            skip=skip, 
+            limit=limit
+        )
     return admins
 
 
@@ -92,10 +133,8 @@ def get_admin_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    admin = crud_admin.get_admin_by_id(db=db, admin_id=admin_id)
-    if not admin:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
-    return admin
+    target_admin = _get_and_verify_admin_access(db, admin_id, current_admin)
+    return target_admin
 
 
 @router.put("/admins/{admin_id}", response_model=AdminPublic)
@@ -105,6 +144,12 @@ def update_admin_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
+    target_admin = _get_and_verify_admin_access(db, admin_id, current_admin)
+
+    # Rule: Non-system admin cannot make another user a system admin
+    if not current_admin.is_system_admin and admin_in.is_system_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="權限不足：您不能將其他使用者設為系統管理員")
+
     admin = crud_admin.update_admin(db=db, admin_id=admin_id, admin_in=admin_in)
     if not admin:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
@@ -117,13 +162,12 @@ def delete_admin_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    admin_to_delete = crud_admin.get_admin_by_id(db=db, admin_id=admin_id)
-    if not admin_to_delete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
+    admin_to_delete = _get_and_verify_admin_access(db, admin_id, current_admin)
 
     if str(current_admin.admin_id) == str(admin_to_delete.admin_id):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="您不能刪除自己的帳號")
 
+    # This check is now partially redundant due to the helper, but adds an explicit layer of security
     if admin_to_delete.is_system_admin and (not current_admin.is_system_admin):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="權限不足：一般管理員不能刪除系統管理員")
 
@@ -149,7 +193,11 @@ def list_doctors_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    doctors = crud_doctor.list_doctors(db=db, skip=skip, limit=limit)
+    department = None
+    if not current_admin.is_system_admin:
+        department = current_admin.department
+    
+    doctors = crud_doctor.list_doctors(db=db, specialty=department, skip=skip, limit=limit)
     return doctors
 
 
@@ -249,17 +297,38 @@ def delete_patient_endpoint(
     return
 
 
-@router.get("/leave-requests", response_model=List[dict]) # Assuming a dict response for now
+@router.get("/leave-requests", response_model=List[dict])
 def list_leave_requests_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
     """
     List all pending leave requests for admin management.
+    - System admins see all departments.
+    - Department admins see only their own department.
     """
-    leave_requests = crud_schedule.list_pending_leave_requests(db)
+    department = None
+    if not current_admin.is_system_admin:
+        department = current_admin.department
+    
+    leave_requests = crud_schedule.list_pending_leave_requests(db, department=department)
     return leave_requests
 
+
+def _verify_leave_request_department(db: Session, schedule_id: uuid.UUID, admin: Admin):
+    """Helper to verify if a leave request's schedule belongs to the admin's department."""
+    if admin.is_system_admin:
+        return
+    schedule = crud_schedule.get_schedule(db, schedule_id)
+    if not schedule:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
+    
+    doctor = crud_doctor.get_doctor(db, schedule.doctor_id)
+    if not doctor or doctor.specialty != admin.department:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="權限不足：您只能管理您所在科別的請假申請"
+        )
 
 @router.put("/leave-requests/{schedule_id}/approve", status_code=status.HTTP_200_OK)
 def approve_leave_request_endpoint(
@@ -270,6 +339,7 @@ def approve_leave_request_endpoint(
     """
     Admin approves a leave request.
     """
+    _verify_leave_request_department(db, schedule_id, current_admin)
     crud_leave_request.approve_leave_request(db, schedule_id=schedule_id)
     return {"message": "停診申請已核准。"}
 
@@ -283,5 +353,6 @@ def reject_leave_request_endpoint(
     """
     Admin rejects a leave request.
     """
+    _verify_leave_request_department(db, schedule_id, current_admin)
     crud_leave_request.reject_leave_request(db, schedule_id=schedule_id)
     return {"message": "停診申請已拒絕。"}

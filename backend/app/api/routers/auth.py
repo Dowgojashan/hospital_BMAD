@@ -81,7 +81,11 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token_expires = timedelta(minutes=int(60))
     token_data = {"sub": str(getattr(user, f"{role}_id", getattr(user, 'patient_id', None))), "role": role}
     if role == "patient":
-        token_data["is_verified"] = user.is_verified # Include is_verified for patients
+        token_data["is_verified"] = user.is_verified
+    elif role == "admin":
+        token_data["is_system_admin"] = user.is_system_admin
+        token_data["department"] = user.department
+
     token = security.create_access_token(token_data, expires_delta=access_token_expires)
     logger.info("login_for_access_token: end")
     return {"access_token": token, "token_type": "bearer"}

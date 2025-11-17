@@ -59,8 +59,13 @@ def update_admin(db: Session, admin_id: uuid.UUID, admin_in: AdminUpdate) -> Opt
     db.refresh(db_admin)
     return db_admin
 
-def list_admins(db: Session, skip: int = 0, limit: int = 100) -> List[Admin]:
-    return db.query(Admin).offset(skip).limit(limit).all()
+def list_admins(db: Session, department: Optional[str] = None, is_system_admin: Optional[bool] = None, skip: int = 0, limit: int = 100) -> List[Admin]:
+    query = db.query(Admin)
+    if department:
+        query = query.filter(Admin.department == department)
+    if is_system_admin is not None:
+        query = query.filter(Admin.is_system_admin == is_system_admin)
+    return query.offset(skip).limit(limit).all()
 
 def delete_admin(db: Session, admin_id: uuid.UUID) -> Optional[Admin]:
     db_admin = db.query(Admin).filter(Admin.admin_id == admin_id).first()

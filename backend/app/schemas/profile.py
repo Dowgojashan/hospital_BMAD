@@ -51,4 +51,5 @@ class AdminProfileResponse(BaseModel):
     name: str
     email: EmailStr
     is_system_admin: bool
+    department: Optional[str] = None
     created_at: datetime

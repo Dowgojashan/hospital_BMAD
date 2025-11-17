@@ -1,18 +1,41 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query # Import Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional # Ensure List is imported
+from typing import List, Optional
 import uuid
 from datetime import date
-import logging # Import logging
+import logging
 
 from app.db.session import get_db
 from app.models.admin import Admin
-from app.crud import crud_schedule
+from app.models.doctor import Doctor
+from app.crud import crud_schedule, crud_doctor
 from app.schemas.schedule import ScheduleCreate, ScheduleUpdate, SchedulePublic, ScheduleRecurringCreate
 from app.api.routers.admin_management import get_current_active_admin
 
 router = APIRouter()
-logger = logging.getLogger(__name__) # Initialize logger
+logger = logging.getLogger(__name__)
+
+def _verify_doctor_department(db: Session, doctor_id: uuid.UUID, admin: Admin):
+    """Helper to verify if a doctor belongs to the admin's department."""
+    if admin.is_system_admin:
+        return
+    doctor = crud_doctor.get_doctor(db, doctor_id)
+    if not doctor or doctor.specialty != admin.department:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="權限不足：您只能管理您所在科別的醫生班表"
+        )
+
+def _verify_schedule_department(db: Session, schedule_id: uuid.UUID, admin: Admin):
+    """Helper to verify if a schedule belongs to the admin's department."""
+    if admin.is_system_admin:
+        return
+    schedule = crud_schedule.get_schedule(db, schedule_id)
+    if not schedule:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
+    
+    _verify_doctor_department(db, schedule.doctor_id, admin)
+    return schedule
 
 
 @router.post("/", response_model=SchedulePublic, status_code=status.HTTP_201_CREATED)
@@ -21,9 +44,7 @@ def create_schedule_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    Create a new schedule. Only accessible by administrators.
-    """
+    _verify_doctor_department(db, schedule_in.doctor_id, current_admin)
     try:
         return crud_schedule.create_schedule(db=db, schedule_in=schedule_in)
     except HTTPException as e:
@@ -37,34 +58,37 @@ def create_recurring_schedules_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    Create recurring schedules based on a pattern.
-    """
+    _verify_doctor_department(db, schedule_in.doctor_id, current_admin)
     try:
         return crud_schedule.create_recurring_schedules(db=db, schedule_in=schedule_in)
     except HTTPException as e:
-        # Log the error with more context if possible
         logger.error(f"Error creating recurring schedules: {e.detail}")
         raise e
 
 
 @router.get("/", response_model=List[SchedulePublic])
 def list_schedules_endpoint(
-    doctor_ids: Optional[List[uuid.UUID]] = Query(None), # Changed to accept a list of doctor_ids
-    month: Optional[int] = None, # New filter for month
-    year: Optional[int] = None,  # New filter for year
+    doctor_ids: Optional[List[uuid.UUID]] = Query(None),
+    month: Optional[int] = None,
+    year: Optional[int] = None,
     time_period: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    List schedules. Only accessible by administrators.
-    Allows filtering by doctor_ids, month, year, and time_period.
-    """
+    allowed_doctor_ids = doctor_ids
+    if not current_admin.is_system_admin:
+        department_doctors = db.query(Doctor).filter(Doctor.specialty == current_admin.department).all()
+        department_doctor_ids = {doc.doctor_id for doc in department_doctors}
+        if doctor_ids:
+            allowed_doctor_ids = [doc_id for doc_id in doctor_ids if doc_id in department_doctor_ids]
+            if not allowed_doctor_ids: return []
+        else:
+            allowed_doctor_ids = list(department_doctor_ids)
+            if not allowed_doctor_ids: return []
     return crud_schedule.list_schedules(
-        db=db, doctor_ids=doctor_ids, month=month, year=year, time_period=time_period, skip=skip, limit=limit
+        db=db, doctor_ids=allowed_doctor_ids, month=month, year=year, time_period=time_period, skip=skip, limit=limit
     )
 
 
@@ -74,12 +98,7 @@ def get_schedule_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    Get a specific schedule by ID. Only accessible by administrators.
-    """
-    db_schedule = crud_schedule.get_schedule(db=db, schedule_id=schedule_id)
-    if not db_schedule:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
+    db_schedule = _verify_schedule_department(db, schedule_id, current_admin)
     return db_schedule
 
 
@@ -90,9 +109,7 @@ def update_schedule_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    Update a schedule. Only accessible by administrators.
-    """
+    _verify_schedule_department(db, schedule_id, current_admin)
     try:
         db_schedule = crud_schedule.update_schedule(db=db, schedule_id=schedule_id, schedule_in=schedule_in)
         if not db_schedule:
@@ -110,11 +127,8 @@ def update_recurring_schedules_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    Update a recurring schedule.
-    This will delete all future instances from the start_date provided in the body
-    and create new ones based on the new recurring pattern.
-    """
+    # For recurring updates, we verify the department of the doctor_id in the payload
+    _verify_doctor_department(db, schedule_in.doctor_id, current_admin)
     try:
         return crud_schedule.update_recurring_schedules(
             db=db, recurring_group_id=recurring_group_id, schedule_in=schedule_in
@@ -130,9 +144,7 @@ def delete_schedule_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    Delete a schedule. Only accessible by administrators.
-    """
+    _verify_schedule_department(db, schedule_id, current_admin)
     db_schedule = crud_schedule.delete_schedule(db=db, schedule_id=schedule_id)
     if not db_schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
@@ -146,13 +158,14 @@ def delete_recurring_schedules_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    """
-    Delete all schedules in a recurring group on or after a specified start date.
-    """
+    # We need to find one schedule in the group to verify department
+    first_schedule = db.query(Schedule).filter(Schedule.recurring_group_id == recurring_group_id).first()
+    if first_schedule:
+        _verify_schedule_department(db, first_schedule.schedule_id, current_admin)
+
     deleted_count = crud_schedule.delete_recurring_schedules(
         db=db, recurring_group_id=recurring_group_id, start_date=start_date
     )
     if deleted_count == 0:
-        # This isn't an error, but good to know. We can return 200 OK with a message.
         return {"message": "No future recurring schedules found to delete."}
     return {"message": f"Successfully deleted {deleted_count} future recurring schedules."}

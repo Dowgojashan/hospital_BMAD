@@ -397,17 +397,22 @@ def delete_recurring_schedules(
     return deleted_count
 
 
-def list_pending_leave_requests(db: Session) -> List[dict]:
+def list_pending_leave_requests(db: Session, department: Optional[str] = None) -> List[dict]:
     """
     Lists all schedule entries that are pending leave approval, including the leave reason.
+    Can be filtered by department.
     """
     query = (
         db.query(Schedule, Doctor, LeaveRequest)
         .join(Doctor, Schedule.doctor_id == Doctor.doctor_id)
         .outerjoin(LeaveRequest, Schedule.schedule_id == LeaveRequest.schedule_id)
         .filter(Schedule.status == "leave_pending")
-        .order_by(Schedule.date.asc())
     )
+
+    if department:
+        query = query.filter(Doctor.specialty == department)
+
+    query = query.order_by(Schedule.date.asc())
 
     results = []
     for schedule_obj, doctor_obj, leave_request_obj in query.all():

@@ -6,14 +6,12 @@ const getUserFromToken = (token) => {
   try {
     if (!token) return null;
     const decoded = jwtDecode(token);
-    // Map 'sub' from JWT payload to 'id' for consistency with frontend usage
-    // Also include the 'role'
     return {
       id: decoded.sub,
       role: decoded.role,
-      is_verified: decoded.is_verified, // Include is_verified from the token
-      // Add other properties from decoded token if needed, e.g., name, email
-      // For now, we only need id and role for authentication checks
+      is_verified: decoded.is_verified,
+      is_system_admin: decoded.is_system_admin,
+      department: decoded.department,
     };
   } catch (error) {
     console.error("Error decoding token:", error);

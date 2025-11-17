@@ -16,21 +16,22 @@ const isValidPhone = (phone) => {
 };
 
 const AdminUserManagementPage = () => {
+  const currentUser = useAuthStore((s) => s.user); // Get current user for role checks
   const [users, setUsers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
-    login_id: '', // This will be account_username for admin, doctor_login_id for doctor
-    email: '',    // For admin contact email, and now for doctor email
+    login_id: '',
+    email: '',
     password: '',
-    confirmPassword: '', // New field for confirm password
-    role: 'patient', // Default to patient
-    specialty: '', // Only for doctor
-    phone: '', // For patient
-    dob: '', // For patient
-    card_number: '', // For patient
-    department: '', // For admin
+    confirmPassword: '',
+    role: 'patient',
+    specialty: '',
+    phone: '',
+    dob: '',
+    card_number: '',
+    department: '',
   });
   const [filterRole, setFilterRole] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -40,20 +41,41 @@ const AdminUserManagementPage = () => {
   }, []);
 
   const handleAddNewUserClick = () => {
-    setEditingUser(null); // Clear any editing user
-    setFormData({ // Reset formData to initial empty state
+    setEditingUser(null);
+    const initialDepartment = currentUser.role === 'admin' && !currentUser.is_system_admin 
+      ? currentUser.department 
+      : '';
+
+    setFormData({
       name: '',
       login_id: '',
       email: '',
       password: '',
       confirmPassword: '',
-      role: 'patient', // Default role
+      role: 'patient',
       specialty: '',
       phone: '',
       dob: '',
       card_number: '',
+      department: initialDepartment,
     });
-    setShowForm(true); // Show the form
+    setShowForm(true);
+  };
+
+  const handleRoleChange = (newRole) => {
+    const initialDepartment = newRole === 'admin' && currentUser.role === 'admin' && !currentUser.is_system_admin
+      ? currentUser.department
+      : '';
+
+    setFormData({
+      ...formData,
+      role: newRole,
+      specialty: '',
+      phone: '',
+      dob: '',
+      card_number: '',
+      department: initialDepartment,
+    });
   };
 
   const loadUsers = async () => {
@@ -62,24 +84,24 @@ const AdminUserManagementPage = () => {
       const [adminsResponse, doctorsResponse, patientsResponse] = await Promise.all([
         api.get('/api/v1/admins/'),
         api.get('/api/v1/doctors/'),
-        api.get('/api/v1/patients/'), // Fetch patients
+        api.get('/api/v1/patients/'),
       ]);
 
       const admins = adminsResponse.data.map(admin => ({
         id: admin.admin_id,
         name: admin.name,
         login_id: admin.account_username,
-        email: admin.email, // Admin contact email
+        email: admin.email,
         role: 'admin',
         is_system_account: admin.is_system_account,
-        department: admin.department, // Map department
+        department: admin.department,
       }));
 
       const doctors = doctorsResponse.data.map(doctor => ({
         id: doctor.doctor_id,
         name: doctor.name,
         login_id: doctor.doctor_login_id,
-        email: doctor.email, // Correctly add email for doctors
+        email: doctor.email,
         role: 'doctor',
         specialty: doctor.specialty,
       }));
@@ -94,7 +116,7 @@ const AdminUserManagementPage = () => {
         card_number: patient.card_number,
       }));
 
-      setUsers([...admins, ...doctors, ...patients]); // Include patients
+      setUsers([...admins, ...doctors, ...patients]);
     } catch (error) {
       console.error('Failed to fetch users:', error);
       alert('載入使用者失敗，請稍後再試。');
@@ -116,26 +138,23 @@ const AdminUserManagementPage = () => {
       return;
     }
 
-    // Email format validation
     if (formData.email && !isValidEmail(formData.email)) {
       alert('電子郵件格式不正確，請重新輸入。');
       return;
     }
 
-    // Patient-specific phone validation
     if (formData.role === 'patient' && formData.phone && !isValidPhone(formData.phone)) {
       alert('電話號碼格式不正確，請輸入09開頭的10位數字。');
       return;
     }
     try {
       if (editingUser) {
-        // Update user
         if (formData.role === 'admin') {
           await api.put(`/api/v1/admins/${editingUser.id}`, {
             account_username: formData.login_id,
             name: formData.name,
             email: formData.email,
-            department: formData.department, // Include department
+            department: formData.department,
             ...(formData.password && { password: formData.password }),
           });
         } else if (formData.role === 'doctor') {
@@ -143,7 +162,7 @@ const AdminUserManagementPage = () => {
             doctor_login_id: formData.login_id,
             name: formData.name,
             specialty: formData.specialty,
-            email: formData.email, // Now sending email for doctor update
+            email: formData.email,
             ...(formData.password && { password: formData.password }),
           });
         } else if (formData.role === 'patient') {
@@ -158,14 +177,13 @@ const AdminUserManagementPage = () => {
         }
         alert('帳號更新成功！');
       } else {
-        // Create user
         if (formData.role === 'admin') {
           await api.post('/api/v1/admins/', {
             account_username: formData.login_id,
             name: formData.name,
             email: formData.email,
             password: formData.password,
-            department: formData.department, // Include department
+            department: formData.department,
           });
         } else if (formData.role === 'doctor') {
           const doctorData = {
@@ -175,7 +193,6 @@ const AdminUserManagementPage = () => {
             specialty: formData.specialty,
             email: formData.email,
           };
-          console.log('Sending doctor creation data:', doctorData);
           await api.post('/api/v1/doctors/', doctorData);
         } else if (formData.role === 'patient') {
           const patientData = {
@@ -202,8 +219,9 @@ const AdminUserManagementPage = () => {
         phone: '',
         dob: '',
         card_number: '',
+        department: '',
       });
-      loadUsers(); // Reload users after successful operation
+      loadUsers();
     } catch (error) {
       console.error('Failed to submit user:', error);
       const errorMessage = error.response?.data?.detail || '操作失敗，請檢查輸入或稍後再試。';
@@ -215,7 +233,7 @@ const AdminUserManagementPage = () => {
     setEditingUser(user);
     setFormData({
       name: user.name,
-      login_id: user.role === 'admin' ? user.login_id : user.role === 'doctor' ? user.login_id : '', // login_id is not for patient
+      login_id: user.role === 'admin' ? user.login_id : user.role === 'doctor' ? user.login_id : '',
       email: user.email || '',
       password: '',
       confirmPassword: '',
@@ -224,7 +242,7 @@ const AdminUserManagementPage = () => {
       phone: user.phone || '',
       dob: user.dob || '',
       card_number: user.card_number || '',
-      department: user.department || '', // Populate department
+      department: user.department || '',
     });
     setShowForm(true);
   };
@@ -242,7 +260,7 @@ const AdminUserManagementPage = () => {
         await api.delete(`/api/v1/patients/${userId}`);
       }
       alert('帳號刪除成功！');
-      loadUsers(); // Reload users after successful deletion
+      loadUsers();
     } catch (error) {
       console.error('Failed to delete user:', error);
       const errorMessage = error.response?.data?.detail || '刪除失敗，請稍後再試。';
@@ -286,12 +304,7 @@ const AdminUserManagementPage = () => {
               <select
                 className="form-select"
                 value={formData.role}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    role: e.target.value,
-                  })
-                }
+                onChange={(e) => handleRoleChange(e.target.value)}
               >
                 <option value="patient">病患</option>
                 <option value="admin">管理員</option>
@@ -322,7 +335,7 @@ const AdminUserManagementPage = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, login_id: e.target.value })
                   }
-                  required={!editingUser} // Only required for new user
+                  required={!editingUser}
                 />
               </div>
             )}
@@ -351,6 +364,7 @@ const AdminUserManagementPage = () => {
                     setFormData({ ...formData, department: e.target.value })
                   }
                   placeholder=""
+                  disabled={editingUser || (currentUser.role === 'admin' && !currentUser.is_system_admin)}
                 />
               </div>
             )}
@@ -364,11 +378,11 @@ const AdminUserManagementPage = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                required={!editingUser} // Password required only for new user
+                required={!editingUser}
               />
             </div>
 
-            {!editingUser && ( // Only show confirm password for new user creation
+            {!editingUser && (
               <div className="form-group">
                 <label className="form-label">確認密碼</label>
                 <input
@@ -453,7 +467,7 @@ const AdminUserManagementPage = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3>帳號列表</h3>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <label style={{ fontSize: '14px', color: '#6c757d' /* var(--text-medium) */ }}>篩選：</label>
+            <label style={{ fontSize: '14px', color: '#6c757d' }}>篩選：</label>
             <select
               className="form-select"
               value={filterRole}
@@ -500,7 +514,7 @@ const AdminUserManagementPage = () => {
                       ) : user.role === 'admin' && user.department ? (
                         <span>{user.department}</span>
                       ) : (
-                        <span style={{ color: '#6c757d' /* var(--text-medium) */ }}>-</span>
+                        <span style={{ color: '#6c757d' }}>-</span>
                       )}
                     </td>
                     <td>

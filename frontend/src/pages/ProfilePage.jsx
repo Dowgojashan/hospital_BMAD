@@ -26,6 +26,7 @@ const ProfilePage = () => {
     dob: '',
     card_number: '',
     specialty: '', // Added for doctor's specialty
+    department: '', // Added for admin's department
     login_id: '', // Added for doctor/admin login ID
     password: '',
     confirmPassword: '',
@@ -41,26 +42,20 @@ const ProfilePage = () => {
       try {
         const response = await api.get('/api/v1/profile/me');
         const profileData = response.data;
-        setFormData({
+        const newFormData = {
           name: profileData.name || '',
           email: profileData.email || '',
           phone: profileData.phone || '',
           dob: profileData.dob || '',
           card_number: profileData.card_number || '',
           specialty: profileData.specialty || '',
+          department: profileData.department || '',
           login_id: profileData.account_username || profileData.doctor_login_id || '',
           password: '',
           confirmPassword: '',
-        });
-        setOriginalFormData({ // Store original data
-          name: profileData.name || '',
-          email: profileData.email || '',
-          phone: profileData.phone || '',
-          dob: profileData.dob || '',
-          card_number: profileData.card_number || '',
-          specialty: profileData.specialty || '',
-          login_id: profileData.account_username || profileData.doctor_login_id || '',
-        });
+        };
+        setFormData(newFormData);
+        setOriginalFormData(newFormData); // Store original data
         setIsEditing(false); // Ensure not in editing mode initially
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -132,7 +127,8 @@ const ProfilePage = () => {
           (key === 'dob' && user.role === 'patient') ||
           (key === 'card_number' && user.role === 'patient') ||
           (key === 'login_id' && (user.role === 'doctor' || user.role === 'admin')) ||
-          (key === 'specialty' && user.role === 'doctor')
+          (key === 'specialty' && user.role === 'doctor') ||
+          (key === 'department' && user.role === 'admin')
         ) {
           continue;
         }
@@ -269,6 +265,18 @@ const ProfilePage = () => {
                 type="text"
                 className="form-control"
                 value={formData.login_id}
+                disabled // Always disabled
+              />
+            </div>
+          )}
+
+          {user.role === 'admin' && formData.department && (
+            <div className="form-group">
+              <label className="form-label">負責科別</label>
+              <input
+                type="text"
+                className="form-control"
+                value={formData.department}
                 disabled // Always disabled
               />
             </div>
