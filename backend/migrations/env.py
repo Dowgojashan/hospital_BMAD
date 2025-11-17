@@ -40,7 +40,7 @@ config = context.config
 # This overrides the DATABASE_URL from .env if it's pointing to a non-existent PostgreSQL host
 # or if it's not set, ensuring Alembic can connect to the local SQLite DB.
 if not os.getenv("DATABASE_URL") or "db" in os.getenv("DATABASE_URL", ""):
-    config.set_main_option("sqlalchemy.url", "sqlite:///./test.db")
+    config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 else:
     config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 

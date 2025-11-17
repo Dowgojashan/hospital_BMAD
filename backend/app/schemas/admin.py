@@ -10,6 +10,7 @@ class AdminCreate(BaseModel):
     name: str
     email: EmailStr
     is_system_account: bool = False
+    department: Optional[str] = None
 
 
 class AdminUpdate(BaseModel):
@@ -17,6 +18,7 @@ class AdminUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     is_system_account: Optional[bool] = None
+    department: Optional[str] = None
 
 
 class AdminPublic(BaseModel):
@@ -27,4 +29,5 @@ class AdminPublic(BaseModel):
     name: str
     email: EmailStr
     is_system_admin: bool
+    department: Optional[str] = None
     created_at: datetime

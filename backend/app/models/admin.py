@@ -15,6 +15,7 @@ class Admin(Base):
     password_hash = Column(String, nullable=False)
     is_system_account = Column(Boolean, nullable=False, default=False)
     is_system_admin = Column(Boolean, nullable=False, default=False)
+    department = Column(String, nullable=True) # New department column
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):

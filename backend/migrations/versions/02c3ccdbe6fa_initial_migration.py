@@ -33,15 +33,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('admin_id'),
     sa.UniqueConstraint('account_username')
     )
-    op.create_table('AUDIT_LOG',
-    sa.Column('log_id', sa.UUID(), nullable=False),
-    sa.Column('user_id', sa.String(), nullable=False),
-    sa.Column('action', sa.String(), nullable=False),
-    sa.Column('timestamp', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('target_id', sa.String(), nullable=True),
-    sa.Column('log_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.PrimaryKeyConstraint('log_id')
-    )
+
     op.create_table('DOCTOR',
     sa.Column('doctor_id', sa.UUID(), nullable=False),
     sa.Column('doctor_login_id', sa.String(), nullable=False),
@@ -189,6 +181,6 @@ def downgrade() -> None:
     op.drop_table('MEDICAL_RECORD')
     op.drop_table('PATIENT')
     op.drop_table('DOCTOR')
-    op.drop_table('AUDIT_LOG')
+
     op.drop_table('ADMIN')
     # ### end Alembic commands ###

@@ -92,7 +92,7 @@ def get_admin_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    admin = crud_admin.get_admin(db=db, admin_id=admin_id)
+    admin = crud_admin.get_admin_by_id(db=db, admin_id=admin_id)
     if not admin:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
     return admin
@@ -117,7 +117,7 @@ def delete_admin_endpoint(
     db: Session = Depends(get_db),
     current_admin: Admin = Depends(get_current_active_admin),
 ):
-    admin_to_delete = crud_admin.get_admin(db=db, admin_id=admin_id)
+    admin_to_delete = crud_admin.get_admin_by_id(db=db, admin_id=admin_id)
     if not admin_to_delete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin not found")
 

@@ -26,6 +26,7 @@ def create_admin(
         password_hash=hashed_password,
         is_system_account=is_system_account,
         is_system_admin=is_system_admin,
+        department=admin_in.department, # Add department
     )
     db.add(db_obj)
     db.commit()
@@ -60,3 +61,11 @@ def update_admin(db: Session, admin_id: uuid.UUID, admin_in: AdminUpdate) -> Opt
 
 def list_admins(db: Session, skip: int = 0, limit: int = 100) -> List[Admin]:
     return db.query(Admin).offset(skip).limit(limit).all()
+
+def delete_admin(db: Session, admin_id: uuid.UUID) -> Optional[Admin]:
+    db_admin = db.query(Admin).filter(Admin.admin_id == admin_id).first()
+    if not db_admin:
+        return None
+    db.delete(db_admin)
+    db.commit()
+    return db_admin
