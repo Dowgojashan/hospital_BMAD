@@ -1,0 +1,30 @@
+import uuid
+from sqlalchemy import Column, String, Date, DateTime, func, Boolean
+from sqlalchemy.orm import relationship
+
+from ..db.base import Base, UUIDType
+
+
+class Patient(Base):
+    __tablename__ = "PATIENT"
+
+    patient_id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    card_number = Column(String, nullable=False, unique=True)
+    name = Column(String, nullable=False)
+    password_hash = Column(String, nullable=False)
+    dob = Column(Date, nullable=False)
+    phone = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_code = Column(String, nullable=True)
+    code_expires_at = Column(DateTime(timezone=True), nullable=True)
+    reset_password_token = Column(String, nullable=True)
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    suspended_until = Column(Date, nullable=True)
+
+    appointments = relationship("Appointment", back_populates="patient")
+    medical_records = relationship("MedicalRecord", back_populates="patient")
+
+    def __repr__(self):
+        return f"<Patient {self.patient_id} {self.card_number} {self.name}>"

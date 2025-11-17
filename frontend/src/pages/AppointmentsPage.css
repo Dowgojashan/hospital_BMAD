@@ -1,0 +1,128 @@
+.filter-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.filter-tab {
+  padding: 10px 20px;
+  border: 2px solid #ced4da; /* var(--medium-gray) */
+  background: #ffffff; /* var(--white) */
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+  border-color: #007bff; /* var(--primary-blue) */
+  color: #007bff; /* var(--primary-blue) */
+}
+
+.filter-tab.active {
+  background: #007bff; /* var(--primary-blue) */
+  color: #ffffff; /* var(--white) */
+  border-color: #007bff; /* var(--primary-blue) */
+}
+
+.appointments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appointment-card {
+  transition: all 0.3s ease;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.appointment-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* var(--shadow-hover) */
+}
+
+.appointment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.appointment-specialty {
+  color: #6c757d; /* var(--text-medium) */
+  font-size: 14px;
+  margin: 4px 0 0 0;
+}
+
+.appointment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.detail-item {
+  display: flex;
+  gap: 8px;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #6c757d; /* var(--text-medium) */
+}
+
+.appointment-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ced4da; /* var(--medium-gray) */
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: .35em .65em;
+  font-size: .75em;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: .25rem;
+}
+
+.badge-info {
+  color: #055160;
+  background-color: #cff4fc;
+}
+
+.badge-success {
+  color: #0f5132;
+  background-color: #d1e7dd;
+}
+
+.badge-warning {
+  color: #664d03;
+  background-color: #fff3cd;
+}
+
+.badge-danger {
+  color: #842029;
+  background-color: #f8d7da;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+    color: #555;
+}
+
+.card {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}

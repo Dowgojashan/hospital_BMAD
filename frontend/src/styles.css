@@ -1,0 +1,708 @@
+body { font-family: Arial, sans-serif; }
+input { display: block; width: 100%; padding: 6px; margin: 6px 0 12px; }
+label { display: block; margin-top: 8px }
+button { padding: 8px 12px }
+
+/* Styles from HospitalLoginPage.css */
+.login-container {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #a7bfe8 0%, #ffffff 100%); /* Using a placeholder color for var(--accent-blue) and var(--white) */
+}
+
+.login-card {
+  background: #ffffff; /* Using a placeholder color for var(--white) */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Using a placeholder for var(--shadow) */
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #007bff; /* Using a placeholder for var(--primary-blue) */
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  color: #6c757d; /* Using a placeholder for var(--text-medium) */
+  font-size: 16px;
+}
+
+.login-form {
+  width: 100%;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: .5rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    padding: .5rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.form-control:focus {
+    color: #495057;
+    background-color: #fff;
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 .2rem rgba(0,123,255,.25);
+}
+
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    color: #212529;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: .25rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    color: #fff;
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.btn-secondary {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    margin-right: 5px;
+}
+.btn-secondary:hover {
+    color: #fff;
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.alert {
+    padding: .75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: .25rem;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+.login-footer {
+  text-align: center;
+  margin-top: 24px;
+  color: #6c757d; /* Using a placeholder for var(--text-medium) */
+}
+
+.login-footer a {
+  color: #007bff; /* Using a placeholder for var(--primary-blue) */
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Styles from HospitalRegisterPage.css */
+.register-container {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #a7bfe8 0%, #ffffff 100%); /* Using a placeholder color for var(--accent-blue) and var(--white) */
+}
+
+.register-card {
+  background: #ffffff; /* Using a placeholder color for var(--white) */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Using a placeholder for var(--shadow) */
+  padding: 40px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.register-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #007bff; /* Using a placeholder for var(--primary-blue) */
+  margin-bottom: 8px;
+}
+
+.register-subtitle {
+  color: #6c757d; /* Using a placeholder for var(--text-medium) */
+  font-size: 16px;
+}
+
+.register-form {
+  width: 100%;
+}
+
+.register-footer {
+  text-align: center;
+  margin-top: 24px;
+  color: #6c757d; /* Using a placeholder for var(--text-medium) */
+}
+
+.register-footer a {
+  color: #007bff; /* Using a placeholder for var(--primary-blue) */
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Styles from HomePage.css */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.home-card {
+  background: #ffffff; /* var(--white) */
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  text-decoration: none;
+  color: #333333; /* var(--text-dark) */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* var(--shadow) */
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); /* var(--shadow-hover) */
+  color: #007bff; /* var(--primary-blue) */
+}
+
+.home-card-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.home-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #007bff; /* var(--primary-blue) */
+}
+
+.home-card p {
+  color: #6c757d; /* var(--text-medium) */
+  font-size: 14px;
+  margin: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.page-title {
+    font-size: 36px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.page-subtitle {
+    font-size: 18px;
+    color: #666;
+}
+
+/* Styles from AppointmentsPage.css */
+.filter-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.filter-tab {
+  padding: 10px 20px;
+  border: 2px solid #ced4da; /* var(--medium-gray) */
+  background: #ffffff; /* var(--white) */
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+  border-color: #007bff; /* var(--primary-blue) */
+  color: #007bff; /* var(--primary-blue) */
+}
+
+.filter-tab.active {
+  background: #007bff; /* var(--primary-blue) */
+  color: #ffffff; /* var(--white) */
+  border-color: #007bff; /* var(--primary-blue) */
+}
+
+.appointments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appointment-card {
+  transition: all 0.3s ease;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.appointment-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* var(--shadow-hover) */
+}
+
+.appointment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.appointment-specialty {
+  color: #6c757d; /* var(--text-medium) */
+  font-size: 14px;
+  margin: 4px 0 0 0;
+}
+
+.appointment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.detail-item {
+  display: flex;
+  gap: 8px;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #6c757d; /* var(--text-medium) */
+}
+
+.appointment-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ced4da; /* var(--medium-gray) */
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: .35em .65em;
+  font-size: .75em;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: .25rem;
+}
+
+.badge-info {
+  color: #055160;
+  background-color: #cff4fc;
+}
+
+.badge-success {
+  color: #0f5132;
+  background-color: #d1e7dd;
+}
+
+.badge-warning {
+  color: #664d03;
+  background-color: #fff3cd;
+}
+
+.badge-danger {
+  color: #842029;
+  background-color: #f8d7da;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2em;
+    color: #555;
+}
+
+.card {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+/* Styles from BookAppointmentPage.css */
+.book-form {
+  max-width: 600px;
+}
+
+.schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.schedule-item {
+  padding: 12px;
+  background: #e0f7fa; /* var(--accent-blue) */
+  border-radius: 6px;
+}
+
+/* Styles from CheckInPage.css */
+.appointments-select {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.appointment-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 2px solid #ced4da; /* var(--medium-gray) */
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.appointment-option:hover {
+  border-color: #007bff; /* var(--primary-blue) */
+  background: #e0f7fa; /* var(--accent-blue) */
+}
+
+.appointment-option.active {
+  border-color: #007bff; /* var(--primary-blue) */
+  background: #e0f7fa; /* var(--accent-blue) */
+}
+
+.checkin-actions {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e0f7fa; /* var(--accent-blue) */
+}
+
+.queue-status-card {
+  background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%); /* var(--accent-blue), var(--white) */
+}
+
+.queue-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.queue-item {
+  text-align: center;
+  padding: 20px;
+  background: #ffffff; /* var(--white) */
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* var(--shadow) */
+}
+
+.queue-label {
+  display: block;
+  font-size: 14px;
+  color: #6c757d; /* var(--text-medium) */
+  margin-bottom: 8px;
+}
+
+.queue-value {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  color: #007bff; /* var(--primary-blue) */
+}
+
+.text-success {
+    color: #28a745;
+}
+
+/* Styles from MedicalRecordsPage.css */
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.record-card {
+  transition: all 0.3s ease;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.record-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* var(--shadow-hover) */
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0f7fa; /* var(--accent-blue) */
+}
+
+.record-date {
+  color: #6c757d; /* var(--text-medium) */
+  font-size: 14px;
+  margin: 4px 0 0 0;
+}
+
+.record-content {
+  margin-top: 16px;
+}
+
+.record-summary h4 {
+  color: #007bff; /* var(--primary-blue) */
+  margin-bottom: 12px;
+}
+
+.record-summary p {
+  line-height: 1.6;
+  color: #333333; /* var(--text-dark) */
+  white-space: pre-wrap;
+}
+
+/* Styles from SchedulesPage.css */
+.search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.schedules-table {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  color: #212529;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: .75rem;
+  vertical-align: top;
+  border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table tbody + tbody {
+  border-top: 2px solid #dee2e6;
+}
+
+/* Styles from DoctorSchedulesPage.css */
+.schedules-table {
+  overflow-x: auto;
+}
+
+/* Styles from DoctorRecordsPage.css */
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.record-card {
+  transition: all 0.3s ease;
+}
+
+.record-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* var(--shadow-hover) */
+}
+
+.record-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0f7fa; /* var(--accent-blue) */
+}
+
+.record-date {
+  color: #6c757d; /* var(--text-medium) */
+  font-size: 14px;
+  margin: 4px 0 0 0;
+}
+
+.record-content {
+  margin-top: 16px;
+}
+
+.record-content p {
+  line-height: 1.6;
+  color: #333333; /* var(--text-dark) */
+  white-space: pre-wrap;
+}
+
+.form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Styles from LeaveRequestPage.css */
+/* LeaveRequest specific styles */
+
+/* Styles from AdminDashboardPage.css */
+.patient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: #ffffff; /* var(--white) */
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* var(--shadow) */
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); /* var(--shadow-hover) */
+}
+
+.stat-icon {
+  font-size: 48px;
+}
+
+.stat-content h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6c757d; /* var(--text-medium) */
+  margin: 0 0 8px 0;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #007bff; /* var(--primary-blue) */
+  margin: 0;
+}
+
+.clinic-load-table {
+  overflow-x: auto;
+}
+
+/* Styles from AdminScheduleManagementPage.css */
+.search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.schedules-table {
+  overflow-x: auto;
+}
+
+/* Styles from AdminUserManagementPage.css */
+/* UserManagement specific styles */
+.users-table {
+  overflow-x: auto;
+}

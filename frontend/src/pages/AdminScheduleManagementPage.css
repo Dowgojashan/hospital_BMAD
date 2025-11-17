@@ -1,0 +1,188 @@
+/* General Page Layout */
+.container {
+  padding: 2rem;
+  /* The global .container in styles.css already handles max-width and centering */
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  width: 100%; /* Ensure header takes full width within its parent container */
+}
+
+.card {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+  width: 100%; /* Card should take full width of its parent (the global container) */
+  max-width: 1160px; /* Set a max-width slightly less than global container to allow for padding/margin */
+  margin: 0 auto 2rem auto; /* Center the card within the global container */
+}
+
+/* Filter Controls */
+.filter-controls {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+/* Calendar Styling */
+.react-calendar-custom {
+  width: 100%; /* Take full width of its parent card */
+  border: none;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+  margin: 0 auto; /* Center the calendar itself if it doesn't naturally fill */
+}
+
+.react-calendar-custom .react-calendar__tile {
+  height: 120px; /* Increased height for content */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 5px;
+  border: 1px solid #e5e5e5;
+}
+
+.react-calendar-custom .react-calendar__tile--now {
+  background: #e6f7ff;
+}
+
+.react-calendar-custom .react-calendar__month-view__days__day--neighboringMonth {
+  color: #d0d0d0;
+}
+
+/* Tile Content Styling */
+.schedule-tile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.schedule-entry {
+  background-color: #f0f8ff;
+  border-left: 3px solid #007bff;
+  padding: 5px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.schedule-entry .doctor-name {
+  font-weight: bold;
+  display: block;
+  color: #333; /* Ensure doctor name is dark */
+}
+
+.schedule-entry .time-period {
+  color: #555;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.schedule-actions .btn-edit,
+.schedule-actions .btn-delete {
+  border: none;
+  color: white;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-edit {
+  background-color: #ffc107; /* Yellow */
+}
+
+.btn-delete {
+  background-color: #dc3545; /* Red */
+}
+
+/* Form Styling */
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.form-select,
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* 讓整個月曆容器變寬，撐滿畫面 */
+.card:has(.react-calendar-custom) {
+  max-width: 1600px; /* 想更寬可以改成 1600px */
+  width: 100%;
+}
+
+/* 讓月曆本身撐滿外層卡片 */
+.react-calendar-custom {
+  width: 100%;
+  min-width: 1140px; /* 加寬月曆，讓每格更寬 */
+  margin: 0 auto;
+}
+
+
+.react-calendar-custom .react-calendar__month-view__days {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.react-calendar-custom .react-calendar__tile {
+  flex: 0 0 13%; /* 控制每格比例，大約七格剛好滿行 */
+  min-width: 160px; /* 絕對寬度限制 */
+  height: 135px;
+}
+
+/* Alignment for recurring schedule checkbox and label */
+.recurring-checkbox-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap; /* Prevent wrapping */
+  /* Ensure no extra margins interfere with alignment */
+}
+
+.recurring-checkbox-row .form-check-input {
+  margin-top: 0;
+  margin-bottom: 0;
+  vertical-align: middle; /* Explicitly align */
+}
+
+.recurring-checkbox-row .form-check-label {
+  margin-top: 0;
+  margin-bottom: 0;
+  vertical-align: middle; /* Explicitly align */
+  white-space: nowrap; /* Prevent text from wrapping */
+}
+
+/* Center the form within the card */
+.card form {
+  max-width: 500px; /* Adjust this value as needed */
+  margin: 0 auto;
+}

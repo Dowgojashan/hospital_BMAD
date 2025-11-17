@@ -1,0 +1,101 @@
+.book-form {
+  max-width: 600px;
+}
+
+.schedules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.schedule-item {
+  padding: 12px;
+  background: #e0f7fa; /* var(--accent-blue) */
+  border-radius: 6px;
+}
+
+.schedule-entry {
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid transparent; /* Default border */
+}
+
+.schedule-entry:hover {
+  background-color: #f0f8ff; /* Light hover effect */
+}
+
+.schedule-entry.selected {
+  background-color: #e0f7fa; /* Light blue background for selected slot */
+  border: 1px solid #00bcd4; /* Cyan border */
+  box-shadow: 0 0 5px rgba(0, 188, 212, 0.5);
+}
+
+.booking-confirmation {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.booking-confirmation p {
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.booking-confirmation p strong {
+  color: #007bff;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal-content h2 {
+  margin-bottom: 15px;
+}
+
+.modal-title-success {
+  color: #28a745; /* Success green */
+}
+
+.modal-title-error {
+  color: #dc3545; /* Error red */
+}
+
+.modal-content p {
+  font-size: 1.1rem;
+  margin-bottom: 25px;
+}
+
+.modal-content .btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+}

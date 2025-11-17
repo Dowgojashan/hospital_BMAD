@@ -1,0 +1,289 @@
+/* DoctorClinicManagementPage.css */
+
+.page-header {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.page-title {
+    color: var(--primary-color);
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.page-subtitle {
+    color: var(--text-medium);
+    font-size: 1.1rem;
+}
+
+.card {
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 25px;
+}
+
+.card h3 {
+    color: var(--text-dark);
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.alert-success {
+    background-color: var(--success-light-color);
+    color: var(--success-dark-color);
+    border: 1px solid var(--success-color);
+}
+
+.alert-danger {
+    background-color: var(--danger-light-color);
+    color: var(--danger-dark-color);
+    border: 1px solid var(--danger-color);
+}
+
+.schedule-list {
+    display: grid;
+    grid-template-columns: 1fr; /* Each item takes a full row */
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.schedule-item {
+    background-color: var(--background-color); /* Lighter background for item */
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease-in-out;
+}
+
+.schedule-item:hover {
+    transform: translateY(-5px);
+}
+
+.schedule-details {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.schedule-info, .queue-info {
+    flex: 1;
+    min-width: 150px; /* Ensure content doesn't get too squished */
+}
+
+.schedule-info h4 {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.schedule-info p, .queue-info p {
+    margin: 5px 0;
+    color: var(--text-medium);
+    font-size: 0.95rem;
+    overflow-wrap: break-word; /* Prevent long words from overflowing */
+}
+
+.schedule-info strong, .queue-info strong {
+    color: var(--text-dark);
+}
+
+.queue-info {
+    text-align: right;
+}
+
+.schedule-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.schedule-actions .btn {
+    flex: 1;
+    padding: 12px 15px;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.schedule-actions .btn:hover {
+    transform: translateY(-2px);
+}
+
+.schedule-actions .btn-dark {
+    background-color: #343a40; /* Dark gray/black */
+    color: white;
+    border: none;
+}
+
+.schedule-actions .btn-dark:hover {
+    background-color: #23272b; /* Slightly darker on hover */
+}
+
+.schedule-actions .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.schedule-actions .btn-primary:hover {
+    background-color: var(--primary-dark-color);
+}
+
+.schedule-actions .btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+}
+
+.schedule-actions .btn-danger:hover {
+    background-color: var(--danger-dark-color);
+}
+
+/* Waiting Patients List Specific Styles */
+.waiting-patients-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.waiting-patient-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Vertically align items */
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.waiting-patient-item:last-child {
+    border-bottom: none;
+}
+
+.patient-info {
+    display: flex;
+    flex-direction: row; /* Change to row */
+    flex-grow: 1; /* Allow patient info to take available space */
+    align-items: center; /* Align items vertically in the center */
+    gap: 15px; /* Add gap for spacing */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.patient-info span {
+    /* margin-right: 15px; */ /* Removed as gap handles spacing */
+    color: var(--text-dark);
+}
+
+.patient-actions {
+    display: flex;
+    gap: 10px; /* Space between buttons */
+}
+
+/* Custom button styles for prominence */
+.patient-actions .btn-info {
+    background-color: #007bff; /* A more vibrant blue */
+    color: white;
+    border: none;
+}
+
+.patient-actions .btn-info:hover {
+    background-color: #0056b3;
+}
+
+.patient-actions .btn-danger {
+    background-color: #dc3545; /* Standard red, but ensure it's prominent */
+    color: white;
+    border: none;
+}
+
+.patient-actions .btn-danger:hover {
+    background-color: #c82333;
+}
+
+.status-label {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+    margin-right: 10px;
+    white-space: nowrap; /* Prevent text from wrapping */
+}
+
+.status-checked_in {
+    background-color: #28a745; /* Green */
+}
+
+.status-no_show {
+    background-color: #ffc107; /* Yellow/Orange */
+    color: #343a40; /* Dark text for contrast */
+}
+
+.status-seen {
+    background-color: #6c757d; /* Gray */
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .schedule-list {
+        grid-template-columns: 1fr;
+    }
+
+    .schedule-details {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .queue-info {
+        text-align: left;
+    }
+
+    .waiting-patient-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .patient-actions {
+        margin-top: 10px;
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .card h3 {
+        font-size: 1.5rem;
+    }
+
+    .schedule-actions .btn {
+        font-size: 0.9rem;
+        padding: 10px;
+    }
+
+    .patient-actions .btn {
+        font-size: 0.85rem;
+        padding: 8px 10px;
+    }
+}
