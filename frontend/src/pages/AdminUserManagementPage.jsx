@@ -45,6 +45,9 @@ const AdminUserManagementPage = () => {
     const initialDepartment = currentUser.role === 'admin' && !currentUser.is_system_admin 
       ? currentUser.department 
       : '';
+    const initialSpecialty = currentUser.role === 'admin' && !currentUser.is_system_admin 
+      ? currentUser.department 
+      : '';
 
     setFormData({
       name: '',
@@ -53,7 +56,7 @@ const AdminUserManagementPage = () => {
       password: '',
       confirmPassword: '',
       role: 'patient',
-      specialty: '',
+      specialty: initialSpecialty,
       phone: '',
       dob: '',
       card_number: '',
@@ -66,11 +69,14 @@ const AdminUserManagementPage = () => {
     const initialDepartment = newRole === 'admin' && currentUser.role === 'admin' && !currentUser.is_system_admin
       ? currentUser.department
       : '';
+    const initialSpecialty = newRole === 'doctor' && currentUser.role === 'admin' && !currentUser.is_system_admin
+      ? currentUser.department
+      : '';
 
     setFormData({
       ...formData,
       role: newRole,
-      specialty: '',
+      specialty: initialSpecialty,
       phone: '',
       dob: '',
       card_number: '',
@@ -408,6 +414,7 @@ const AdminUserManagementPage = () => {
                     setFormData({ ...formData, specialty: e.target.value })
                   }
                   required
+                  disabled={editingUser || (currentUser.role === 'admin' && !currentUser.is_system_admin)}
                 />
               </div>
             )}
