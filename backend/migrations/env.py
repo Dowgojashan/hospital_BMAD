@@ -3,8 +3,8 @@ import os
 import sys
 from dotenv import load_dotenv
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool, String
+from sqlalchemy.dialects import postgresql
 
 from alembic import context
 
@@ -22,7 +22,11 @@ from app.db.base import UUIDType # Added import for UUIDType
 # Define a custom type engine for UUIDType
 def type_engine(type_, **kw):
     if isinstance(type_, UUIDType):
-        return postgresql.UUID(as_uuid=True)
+        # For PostgreSQL, use native UUID type
+        if context.current_revision_context.environment_context.dialect.name == 'postgresql':
+            return postgresql.UUID(as_uuid=True)
+        # For SQLite and other dialects, store UUID as String
+        return String(36) # UUIDs are 36 characters long (e.g., '12345678-1234-5678-1234-567812345678')
     return type_
 
 # Load environment variables from .env file
@@ -31,6 +35,14 @@ load_dotenv()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Set the SQLAlchemy URL for local development with SQLite
+# This overrides the DATABASE_URL from .env if it's pointing to a non-existent PostgreSQL host
+# or if it's not set, ensuring Alembic can connect to the local SQLite DB.
+if not os.getenv("DATABASE_URL") or "db" in os.getenv("DATABASE_URL", ""):
+    config.set_main_option("sqlalchemy.url", "sqlite:///./test.db")
+else:
+    config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

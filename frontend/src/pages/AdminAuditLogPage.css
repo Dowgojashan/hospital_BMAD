@@ -1,8 +1,33 @@
+/* AdminAuditLogPage.css */
+
 .search-filters {
   display: grid;
+  /* 關鍵：自動填滿欄位，每個欄位最小 200px，最大 1fr (平分剩餘空間) */
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
+  /* 讓輸入框和按鈕底部對齊 */
   align-items: end;
+}
+
+/* 確保 form-group 佔滿它分配到的格子 */
+.form-group {
+  width: 100%;
+  margin-bottom: 0; /* 移除可能導致對齊問題的 margin */
+}
+
+/* 確保輸入框和下拉選單填滿寬度 */
+.form-control,
+.form-select {
+  width: 100%;
+  box-sizing: border-box; /* 確保 padding 不會撐破寬度 */
+}
+
+/* 按鈕群組的設定 */
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  /* 讓按鈕區塊也佔滿一個格子，或者根據內容大小 */
+  justify-content: flex-start; 
 }
 
 .audit-logs-table {
