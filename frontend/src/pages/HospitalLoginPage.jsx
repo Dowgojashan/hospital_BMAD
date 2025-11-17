@@ -15,6 +15,7 @@ const HospitalLoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const setToken = useAuthStore((s) => s.setToken);
+  const setFullUser = useAuthStore((s) => s.setFullUser);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,22 +23,25 @@ const HospitalLoginPage = () => {
     setLoading(true);
 
     try {
-      // Adapt login logic to existing frontend's API and auth store
       const params = new URLSearchParams();
-      params.append('username', formData.email); // Assuming email is used as username
+      params.append('username', formData.email);
       params.append('password', formData.password);
 
       const resp = await api.post('/api/v1/auth/token', params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
       const { access_token } = resp.data;
-      setToken(access_token);
+      setToken(access_token); // This sets the token and basic user info
 
-      const user = useAuthStore.getState().user; // Get the user object from the store
+      // Now fetch the full user profile
+      const profileResp = await api.get('/api/v1/profile/me');
+      setFullUser(profileResp.data); // Update the store with the full profile
+
+      const user = useAuthStore.getState().user;
       if (user && user.role === 'admin') {
-        navigate('/admin/dashboard'); // Navigate to the correct admin dashboard
+        navigate('/admin/dashboard');
       } else {
-        navigate('/'); // Navigate to the main home page for patients/doctors
+        navigate('/');
       }
     } catch (err) {
       const errorDetail = err.response?.data?.detail;
