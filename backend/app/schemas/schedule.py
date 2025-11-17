@@ -51,8 +51,14 @@ class ScheduleRecurringCreate(BaseModel):
     time_period: TIME_PERIOD_ENUM
     start_date: date
     day_of_week: int = Field(..., ge=0, le=6) # 0=Monday, 6=Sunday
-    months_to_create: int = Field(..., ge=1, le=3)
+    months_to_create: int = Field(..., ge=1)
     max_patients: int = Field(10, ge=1) # New field for max patients
+
+class ScheduleRecurringUpdate(BaseModel):
+    time_period: Optional[TIME_PERIOD_ENUM] = None
+    max_patients: Optional[int] = Field(default=None, ge=1)
+    day_of_week: Optional[int] = Field(default=None, ge=0, le=6) # 0=Monday, 6=Sunday
+    start_date: Optional[date] = None
 
 class DoctorLeaveRequestInput(BaseModel):
     date: date

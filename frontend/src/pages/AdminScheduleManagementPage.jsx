@@ -113,32 +113,24 @@ const AdminScheduleManagementPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // if (!editingSchedule && new Date(formData.date) < new Date()) {
-    //   setMessage('日期不能是過去的日期。');
-    //   setLoading(false);
-    //   return;
-    // }
+    setMessage('');
 
     try {
       if (editingSchedule) {
         if (editMode === 'future') {
-          // Handle recurring update
+          // Handle recurring update for the entire group
           const recurringUpdateData = {
-            doctor_id: formData.doctor_id,
             time_period: formData.time_period,
-            start_date: formData.date,
-            day_of_week: parseInt(recurringDayOfWeek, 10),
-            months_to_create: parseInt(recurringMonths, 10),
             max_patients: parseInt(formData.max_patients, 10),
+            day_of_week: parseInt(recurringDayOfWeek, 10),
           };
           await api.put(`/api/v1/schedules/recurring/${editingSchedule.recurring_group_id}`, recurringUpdateData);
           setMessage('週期性班表更新成功！');
         } else {
           // Handle single update, and "break" the link if it was recurring
           const updatePayload = {
-            ...formData, // Use formData directly, it already contains the date
-            recurring_group_id: null, // Break the link to the recurring group
+            ...formData,
+            recurring_group_id: null,
           };
           await api.put(`/api/v1/schedules/${editingSchedule.schedule_id}`, updatePayload);
           setMessage('班表更新成功！');
@@ -162,7 +154,7 @@ const AdminScheduleManagementPage = () => {
       }
       setShowForm(false);
       setEditingSchedule(null);
-      setFormData({ doctor_id: '', date: '', time_period: '' });
+      setFormData({ doctor_id: '', date: '', time_period: '', max_patients: '10' });
       setIsRecurring(false);
       loadSchedules();
     } catch (error) {
@@ -358,6 +350,7 @@ const AdminScheduleManagementPage = () => {
                   setFormData({ ...formData, doctor_id: '' });
                 }}
                 required
+                disabled={editMode === 'future'}
               >
                 <option value="">請選擇科別</option>
                 {[...new Set(doctors.map(doctor => doctor.specialty))].map(
@@ -379,7 +372,7 @@ const AdminScheduleManagementPage = () => {
                   setFormData({ ...formData, doctor_id: e.target.value })
                 }
                 required
-                disabled={!selectedSpecialty}
+                disabled={!selectedSpecialty || editMode === 'future'}
               >
                 <option value="">請選擇醫師</option>
                 {doctors
@@ -393,20 +386,22 @@ const AdminScheduleManagementPage = () => {
             </div>
 
             {/* Date and Recurring Fields */}
-            <div className="form-group">
-              <label className="form-label">{(isRecurring || editMode === 'future') ? '開始日期' : '日期'}</label>
-              <input
-                type="date"
-                className="form-control"
-                value={formData.date}
-                onChange={(e) =>
-                  setFormData({ ...formData, date: e.target.value })
-                }
-                required
-              />
-            </div>
+            {editMode !== 'future' && (
+              <div className="form-group">
+                <label className="form-label">{isRecurring ? '開始日期' : '日期'}</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formData.date}
+                  onChange={(e) =>
+                    setFormData({ ...formData, date: e.target.value })
+                  }
+                  required
+                />
+              </div>
+            )}
 
-            {(isRecurring || editMode === 'future') && (
+            {isRecurring && (
               <>
                 <div className="form-group">
                   <label className="form-label">重複星期</label>
@@ -425,19 +420,21 @@ const AdminScheduleManagementPage = () => {
                     <option value="6">每週日</option>
                   </select>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">重複期間</label>
-                  <select
-                    className="form-select"
-                    value={recurringMonths}
-                    onChange={(e) => setRecurringMonths(e.target.value)}
-                    required={isRecurring && !editingSchedule}
-                  >
-                    <option value="1">一個月</option>
-                    <option value="2">兩個月</option>
-                    <option value="3">三個月</option>
-                  </select>
-                </div>
+                { !editingSchedule &&
+                  <div className="form-group">
+                    <label className="form-label">重複期間</label>
+                    <select
+                      className="form-select"
+                      value={recurringMonths}
+                      onChange={(e) => setRecurringMonths(e.target.value)}
+                      required={isRecurring && !editingSchedule}
+                    >
+                      <option value="1">一個月</option>
+                      <option value="2">兩個月</option>
+                      <option value="3">三個月</option>
+                    </select>
+                  </div>
+                }
               </>
             )}
 
