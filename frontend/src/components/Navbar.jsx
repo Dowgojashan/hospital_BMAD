@@ -116,11 +116,7 @@ const Navbar = () => {
                           帳號管理
                         </Link>
                       </li>
-                      <li className="nav-item">
-                        <Link to="/admin/audit" className={`nav-link ${isActive('/admin/audit')}`}>
-                          審計日誌
-                        </Link>
-                      </li>
+
                     </>
                   )}
                   <li className="nav-item">

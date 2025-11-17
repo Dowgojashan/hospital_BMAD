@@ -14,7 +14,7 @@ import LeaveRequestPage from './pages/LeaveRequestPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import AdminScheduleManagementPage from './pages/AdminScheduleManagementPage'
 import AdminUserManagementPage from './pages/AdminUserManagementPage'
-import AdminAuditLogPage from './pages/AdminAuditLogPage'
+
 import AdminLeaveManagementPage from './pages/AdminLeaveManagementPage';
 import EmailVerificationPage from './pages/EmailVerificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -78,7 +78,7 @@ function AppContent() {
 
         <Route path="/admin/leave-management" element={<ProtectedAdminRoute><AdminLeaveManagementPage /></ProtectedAdminRoute>} />
         <Route path="/admin/users" element={<ProtectedAdminRoute><AdminUserManagementPage /></ProtectedAdminRoute>} />
-        <Route path="/admin/audit" element={<ProtectedAdminRoute><AdminAuditLogPage /></ProtectedAdminRoute>} />
+        
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       </Routes>
     </>

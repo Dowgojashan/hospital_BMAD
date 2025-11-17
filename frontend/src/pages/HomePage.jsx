@@ -68,6 +68,12 @@ const HomePage = () => {
               <p>查看和管理您的門診班表</p>
             </Link>
 
+            <Link to="/doctor/clinic-management" className="home-card">
+              <div className="home-card-icon">🏥</div>
+              <h3>診間管理</h3>
+              <p>管理診間病患叫號與看診狀態</p>
+            </Link>
+
             <Link to="/doctor/leave" className="home-card">
               <div className="home-card-icon">🚫</div>
               <h3>停診申請</h3>
@@ -102,11 +108,7 @@ const HomePage = () => {
               <p>管理病患、醫師和管理員帳號</p>
             </Link>
 
-            <Link to="/admin/audit" className="home-card">
-              <div className="home-card-icon">📋</div>
-              <h3>審計日誌</h3>
-              <p>查看系統操作審計記錄</p>
-            </Link>
+
           </>
         )}
       </div>

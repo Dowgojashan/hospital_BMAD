@@ -12,11 +12,11 @@ from app.models.patient import Patient # Import Patient model
 from app.schemas.admin import AdminCreate, AdminUpdate, AdminPublic
 from app.schemas.doctor import DoctorCreate, DoctorUpdate, DoctorPublic
 from app.schemas.patient import PatientCreate, PatientUpdate, PatientPublic # Import Patient schemas
-from app.crud import crud_admin, crud_doctor, crud_user, crud_schedule, crud_leave_request, crud_audit_log # Import crud_audit_log
+from app.crud import crud_admin, crud_doctor, crud_user, crud_schedule, crud_leave_request
 from app.schemas.admin import AdminCreate, AdminUpdate, AdminPublic
 from app.schemas.doctor import DoctorCreate, DoctorUpdate, DoctorPublic
 from app.schemas.patient import PatientCreate, PatientUpdate, PatientPublic # Import Patient schemas
-from app.schemas.audit_log import AuditLogPublic # Import AuditLogPublic
+
 from app.schemas.dashboard import DashboardStats # Import DashboardStats
 from app.services.dashboard_service import get_admin_dashboard_stats # Import dashboard service
 
@@ -62,31 +62,6 @@ def get_dashboard_stats_endpoint(
     return stats
 
 
-# Audit Log Endpoints
-@router.get("/admin/audit-logs", response_model=List[AuditLogPublic])
-def list_audit_logs_endpoint(
-    skip: int = 0,
-    limit: int = 100,
-    user_id: Optional[str] = None,
-    action: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    db: Session = Depends(get_db),
-    current_admin: Admin = Depends(get_current_active_admin),
-):
-    """
-    Retrieve a list of audit logs.
-    """
-    logs = crud_audit_log.get_audit_logs(
-        db=db,
-        skip=skip,
-        limit=limit,
-        user_id=user_id,
-        action=action,
-        start_date=start_date,
-        end_date=end_date,
-    )
-    return logs
 
 
 # Admin Management Endpoints
