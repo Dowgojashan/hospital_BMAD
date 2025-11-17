@@ -36,6 +36,7 @@ class PatientPublic(BaseModel):
     card_number: str
     is_verified: bool # Add is_verified field
     created_at: datetime
+    suspended_until: Optional[date] = None
 
 
 class PatientUpdate(BaseModel):

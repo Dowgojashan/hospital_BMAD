@@ -53,6 +53,7 @@ const ProfilePage = () => {
           login_id: profileData.account_username || profileData.doctor_login_id || '',
           password: '',
           confirmPassword: '',
+          suspended_until: profileData.suspended_until || null, // Add this line
         };
         setFormData(newFormData);
         setOriginalFormData(newFormData); // Store original data
@@ -313,6 +314,19 @@ const ProfilePage = () => {
                   className="form-control"
                   value={formData.card_number}
                   onChange={(e) => setFormData({ ...formData, card_number: e.target.value })}
+                  disabled // Always disabled
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">線上報到限制</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={
+                    formData.suspended_until
+                      ? `限制到 ${formData.suspended_until}`
+                      : '無'
+                  }
                   disabled // Always disabled
                 />
               </div>
