@@ -483,43 +483,44 @@ RoomDay "1" -- "*" Checkin
 以下提供三個關鍵業務流程的 PlantUML 程式碼，描繪 Controller、Service、Repository 與 Database 之間的互動；同時標示交易與鎖定點。
 
 ### UC-RS-01 病患新增掛號（Reserve Appointment）
-重點：檢查班表空檔、使用行鎖 Locking (SELECT ... FOR UPDATE) 以避免超額掛號，並在交易中寫入 APPOINTMENT。
+重點：此流程涵蓋從前端選擇到後端處理的完整預約過程，後端服務層會驗證並發性並在單一交易中寫入資料庫。
 
 ```plantuml
 @startuml
-title UC-RS-01 病患新增掛號
-actor Patient
-participant AppointmentController
-participant AppointmentService
-participant ScheduleRepository
-participant AppointmentRepository
-database DB
+title UC-RS-01 病患新增掛號 (Updated Flow)
+actor User
+participant "Frontend (React)" as Frontend
+participant "Backend API (FastAPI)" as API
+participant "AppointmentService" as Service
+database "Database (PostgreSQL)" as DB
 
-Patient -> AppointmentController: POST /appointments (patientId, doctorId, date, timePeriod)
-AppointmentController -> AppointmentService: reserve(patientId, doctorId, date, timePeriod)
-activate AppointmentService
-AppointmentService -> ScheduleRepository: findScheduleFor(doctorId, date, timePeriod)
-ScheduleRepository -> DB: SELECT * FROM schedule WHERE doctor_id=... AND date=... AND start<=... FOR UPDATE
-activate DB
-DB --> ScheduleRepository: schedule row (locked)
-deactivate DB
-ScheduleRepository --> AppointmentService: schedule (locked)
-AppointmentService -> AppointmentRepository: countExistingAppointments(doctorId, date, timePeriod)
-AppointmentRepository -> DB: SELECT COUNT(*) FROM appointment WHERE doctor_id=... AND date=... AND time_period=...
-DB --> AppointmentRepository: count
-AppointmentRepository --> AppointmentService: count
-alt if capacity available
-  AppointmentService -> AppointmentRepository: create(appointment)
-  AppointmentRepository -> DB: INSERT INTO appointment ...
-  DB --> AppointmentRepository: insert ok
-  AppointmentRepository --> AppointmentService: appointment
-  AppointmentService -> NotificationService: notifyPatient(appointment)
-else if no capacity
-  AppointmentService -> WaitlistService: addToWaitlist(...)
-end
-AppointmentService -> DB: COMMIT
-deactivate AppointmentService
-AppointmentController --> Patient: 201 Created / waitlist
+autonumber
+
+User -> Frontend: 進入預約頁面並選擇科別
+Frontend -> API: GET /doctors?specialty=...
+API --> Frontend: 回傳醫生列表
+
+User -> Frontend: 選擇醫生和日期
+Frontend -> API: GET /schedules?doctorId=...&date=...
+API --> Frontend: 回傳可預約時段
+
+User -> Frontend: 選擇時段並點擊「確認預約」
+Frontend -> API: POST /appointments (token, doctorId, date, time_period)
+API -> Service: create_appointment(appointment_data)
+activate Service
+
+note over Service, DB: 開始資料庫交易 (BEGIN TRANSACTION)
+Service -> DB: 檢查醫生班表與預約時段是否衝突 (SELECT ... FOR UPDATE)
+DB --> Service: 時段可預約 (Row locked)
+Service -> DB: 寫入新的預約紀錄 (INSERT INTO appointments)
+DB --> Service: 寫入成功
+note over Service, DB: 提交交易 (COMMIT)
+
+Service --> API: 預約成功
+deactivate Service
+
+API --> Frontend: 201 Created (預約成功)
+Frontend --> User: 顯示預約成功訊息
 
 @enduml
 ```
