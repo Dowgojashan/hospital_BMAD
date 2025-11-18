@@ -129,15 +129,10 @@ class AppointmentService:
             .filter(Appointment.patient_id == patient_id)
         )
 
-        # If no date range is provided, filter for today in Taiwan time
-        if not start_date and not end_date:
-            taiwan_today = self._get_taiwan_current_date()
-            query = query.filter(Appointment.date == taiwan_today)
-        else:
-            if start_date:
-                query = query.filter(Appointment.date >= start_date)
-            if end_date:
-                query = query.filter(Appointment.date <= end_date)
+        if start_date:
+            query = query.filter(Appointment.date >= start_date)
+        if end_date:
+            query = query.filter(Appointment.date <= end_date)
         
         if statuses:
             query = query.filter(Appointment.status.in_(statuses))

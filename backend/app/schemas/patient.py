@@ -45,6 +45,7 @@ class PatientUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
     card_number: Optional[str] = None
+    dob: Optional[date] = None
 
     @field_validator('phone')
     def validate_phone(cls, v):
